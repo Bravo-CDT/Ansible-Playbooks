@@ -1,0 +1,23 @@
+---
+- name: Install Active Directory Certificate Services (AD CS)
+  hosts: windows_servers
+  tasks:
+
+    - name: Install the ADCS-Cert-Authority feature and RSAT tools
+      ansible.windows.win_feature:
+        name: ADCS-Cert-Authority
+        include_management_tools: true
+        state: present
+      register: win_ca_install
+
+    - name: Configure Standalone Root CA
+      ansible.windows.win_shell: |
+        Install-AdcsCertificationAuthority `
+          -CAType StandaloneRootCA `
+          -CACommonName "bravocdt-OM7755-WINSRV20-CA" `
+          -CryptoProviderName "RSA#Microsoft Software Key Storage Provider" `
+          -KeyLength 4096 `
+          -HashAlgorithmName SHA256 `
+          -Force
+      when: win_ca_install.changed
+    
