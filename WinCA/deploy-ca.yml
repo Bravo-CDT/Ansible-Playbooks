@@ -40,9 +40,7 @@
           -OverwriteExistingKey `
           -Force
 
-    # Sometimes the CA could be reconfigured, so we need to ensure we are using the latest certificate for export
-    # powershell command checks the local machine's root certificate directory
-    # than graps the one with the CACommonName and sorts them by NotBefore date, then selects the first one (the newest)
+    # Find the newest CA certificate for export
     - name: Get the thumbprint of the newest installed CA certificate
       ansible.windows.win_shell: |
         (Get-ChildItem -Path Cert:\LocalMachine\Root | Where-Object { $_.Subject -like "*{{ CACommonName }}*" } | Sort-Object NotBefore -Descending | Select-Object -First 1).Thumbprint.Trim()
