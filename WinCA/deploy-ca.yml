@@ -40,6 +40,7 @@
           -LogDirectory "C:\windows\system32\CertLog" `
           -OverwriteExistingKey `
           -Force
+      when: ca_service.state != 'running'
 
     # Find the newest CA certificate for export
     - name: Get the thumbprint of the newest installed CA certificate
