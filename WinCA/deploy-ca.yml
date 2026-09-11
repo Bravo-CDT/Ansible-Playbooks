@@ -10,7 +10,11 @@
         name: ADCS-Cert-Authority
         include_management_tools: true
         state: present
-      register: win_ca_install
+
+    - name: Check if CA service is already configured
+      ansible.windows.win_service:
+        name: CertSvc
+      register: ca_service
 
     - name: Configure Standalone Root CA
       ansible.windows.win_shell: |
@@ -22,31 +26,29 @@
           -HashAlgorithmName SHA256 `
           -DatabaseDirectory "C:\windows\system32\CertLog" `
           -LogDirectory "C:\windows\system32\CertLog" `
-          -AllowAdministratorInteraction $false `
+          -OverwriteExistingKey `
           -Force
-      when: win_ca_install.changed
+      when: not ca_service.exists
 
-    - name: Get the thumbprint of the installed CA
+    - name: Get the thumbprint of the newest installed CA certificate
       ansible.windows.win_shell: |
-        (Get-ChildItem -Path Cert:\LocalMachine\Root | Where-Object { $_.Subject -like "*{{ CACommonName }}*" }).Thumbprint
+        (Get-ChildItem -Path Cert:\LocalMachine\Root | Where-Object { $_.Subject -like "*{{ CACommonName }}*" } | Sort-Object NotBefore -Descending | Select-Object -First 1).Thumbprint.Trim()
       register: ca_thumbprint
 
     - name: Export root CA certificate
       ansible.windows.win_certificate_store:
-        path: C:\Temp\RootCA.pem
+        path: C:\Windows\Temp\RootCA.pem
         state: exported
-        file_name: pem
+        file_type: pem
         store_location: LocalMachine
         store_name: Root
-        thumprint: "{{ ca_thumbprint.stdout }}"
-      when: win_ca_install.changed
+        thumbprint: "{{ ca_thumbprint.stdout_lines[0] }}"
 
-    - name: Fetch Root CA to Ansible Controler
-      ansible.windows.win_fetch:
-        src: C:\Temp\RootCA.pem
+    - name: Copy Root CA to Ansible Controller
+      ansible.builtin.fetch:
+        src: C:\Windows\Temp\RootCA.pem
         dest: ./RootCA.pem
-        flat: yes
-      when: win_ca_install.changed
+        flat: true
 
 - name: Copy Root Certificate to Windows Machines
   hosts: windows_clients
@@ -56,12 +58,12 @@
     - name: Copy Root CA certificate to client machines
       ansible.windows.win_copy:
         src: "{{ path_to_root_cert }}"
-        dest: "C:\\Temp\\RootCA.pem"
+        dest: "C:\\Windows\\Temp\\RootCA.pem"
 
     - name: Import Root CA certificate into Trusted Root Certification Authorities
       ansible.windows.win_certificate_store:
-        path: "C:\\Temp\\RootCA.pem"
-        state: imported
+        path: "C:\\Windows\\Temp\\RootCA.pem"
+        state: present
         store_location: LocalMachine
         store_name: Root
 
@@ -71,16 +73,15 @@
   vars:
     path_to_root_cert: "./RootCA.pem"
   tasks:
-    - name: Copy Root CA certificate to client machines
-      ansible.builytin.copy:
+    - name: Copy Root CA certificate to Linux machines
+      ansible.builtin.copy:
         src: "{{ path_to_root_cert }}"
-        dest: "/usr/local/share/ca-certificates/RootCA.pem"
+        dest: "/usr/local/share/ca-certificates/RootCA.crt"
         owner: root
         group: root
         mode: '0644'
       register: ca_cert
 
     - name: Import Root CA certificate into Trusted Root Certification Authorities
-      ansible.builytin.shell: |
-        update-ca-certificates
+      ansible.builtin.command: update-ca-certificates
       when: ca_cert.changed
