@@ -1,5 +1,6 @@
 # Name: Oleksandr Maniukhin
 # Email: om7755@rit.edu
+# Date: 09/10/2026
 
 # This playbook installs and configures a Standalone Root CA on a Windows Server, 
 # exports the root CA certificate, and distributes it to both Windows and Linux client machines.
