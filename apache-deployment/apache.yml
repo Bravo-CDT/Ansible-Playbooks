@@ -1,0 +1,73 @@
+# Name: Mohamed Amechtak
+# Email: mka3789@rit.edu
+# Team: Bravo
+# Date: 9/11/2026
+
+# This playbook deploys and manages an Apache HTTP Server
+---
+-   name: Apache Deployment Playbook
+    hosts: all
+
+    # These variables should be customized if repurposed as they are Bravo/CSEC473-related
+    vars:
+      team_name: "Bravo"
+      comp_name: "CSEC473 Competition"
+      apache_status: "Welcome to the Bravo Apache Web Server!"
+
+    tasks: 
+
+    # Installs the base Apache package on target machine(s)
+    - name: Install Apache
+      apt:
+        name: apache2
+        update_cache: yes
+      become: yes
+
+    # Determines Apache's current state and enabled status
+    - name: Information Gathering
+      service_facts: 
+
+    # Enable Apache at boot when it is currently disabled
+    - name: Ensure Apache is Enabled
+      service: 
+        name: apache2
+        state: started
+        enabled: yes
+      become: yes
+      when: ansible_facts.services['apache2.service'].status != 'enabled'
+
+    # Refresh service_facts after potential change
+    - name: Refresh Information Gathering
+      service_facts: 
+
+    # Start Apache if it has been manually stopped
+    - name: Ensure Apache is Running
+      service: 
+        name: apache2
+        state: started
+      become: yes
+      when: ansible_facts.services['apache2.service'].state != 'running' 
+
+    # Deploy a custom Gray Team webpage to the Apache web directory
+    - name: Deploy Custom Webpage
+      template: 
+        src: webpage/index.html.j2
+        dest: /var/www/html/index.html
+        owner: root
+        group: root
+        mode: '0644'
+      become: yes
+
+    # Retrieve Apache access logs and store them on the Ansible controller
+    - name: Collect Apache Access Logs
+      fetch: 
+        src: /var/log/apache2/access.log
+        dest: logs/access/
+      become: yes
+
+    # Retrieve Apache error logs and store them on the Ansible controller
+    - name: Collect Apache Error Logs            
+      fetch: 
+        src: /var/log/apache2/error.log 
+        dest: logs/error/
+      become: yes
