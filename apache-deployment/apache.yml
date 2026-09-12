@@ -31,7 +31,6 @@
     - name: Ensure Apache is Enabled
       service: 
         name: apache2
-        state: started
         enabled: yes
       become: yes
       when: ansible_facts.services['apache2.service'].status != 'enabled'
