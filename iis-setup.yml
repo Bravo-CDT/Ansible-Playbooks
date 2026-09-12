@@ -160,6 +160,15 @@
         protocol: tcp
         state: present
         enabled: yes
+    - name: Allow inbound HTTPS (443) for console access
+      win_firewall_rule:
+        name: "Allow-HTTPS-443"
+        localport: 443
+        action: allow
+        direction: in
+        protocol: tcp
+        state: present
+        enabled: yes
 
 
 # Apply all changes
