@@ -1,30 +1,40 @@
 ---
-# Required: community.postgresql
-- name: Install MySql
+# Required collection:
+# ansible-galaxy collection install community.postgresql
+
+- name: Install PostgreSQL
   hosts: dbservers
   become: true
+
   tasks:
-    # Ubuntu comes with MySql, but images can be very strange on OpenStack and so we ensure
-    # that we are getting the most up to date version we can.
-    - name: Install MySql Package
+    - name: Install PostgreSQL repository prerequisites
       ansible.builtin.apt:
-        name: postgresql-common
+        name:
+          - postgresql-common
+          - ca-certificates
         state: present
+        update_cache: true
+
+    - name: Configure PostgreSQL PGDG repository
+      ansible.builtin.command:
+        cmd: /usr/share/postgresql-common/pgdg/apt.postgresql.org.sh -y
+      args:
+        creates: /etc/apt/sources.list.d/pgdg.sources
+
+    - name: Install PostgreSQL and Python adapter
+      ansible.builtin.apt:
+        name:
+          - postgresql
+          - python3-psycopg2
         state: present
+        update_cache: true
 
-    - name: Run MySql Setup Script
-      ansible.builtin.shell:
-        cmd: /usr/share/postgresql-common/pgdg/apt.postgresql.org.sh
-
-    # Version requirement from https://docs.ansible.com/projects/ansible/latest/collections/community/postgresql/postgresql_query_module.html
-    - name: Install pyscopg2 to remote
-      ansible.builtin.pip:
-        name: psycopg2>=2.5.1 
 
 - name: Configure PostgreSQL User and DB
   hosts: dbservers
-  become: yes
-  beocme_user: postgres
+  become: true
+  become_user: postgres
+
   vars:
     db_user: "{{ lookup('ansible.builtin.env', 'DB_USER') | default('bravo', true) }}"
     db_password: "{{ lookup('ansible.builtin.env', 'DB_PASSWORD') }}"
@@ -38,7 +48,7 @@
 
     - name: Create Database User
       community.postgresql.postgresql_user:
-        name: "{{  db_user }}"
+        name: "{{ db_user }}"
         password: "{{ db_password }}"
         role_attr_flags: "NOSUPERUSER,CREATEDB"
         state: present
