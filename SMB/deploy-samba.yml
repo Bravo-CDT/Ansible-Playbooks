@@ -9,30 +9,78 @@
 -   name: Deploy Samba
     hosts: all
     
+# Variables should be customized for future usage, see README.md
+    vars:
+      username: "cyberrange"
+      password: "Password123"
 
     tasks:
 
+# FEATURE 1
 # Installs the Samba package
-    - name: Install Samba
+    - name: Install Samba and Dependencies
       ansible.builtin.apt:
-        name: samba
+        name: 
+          - samba
+          - python3-pexpect
         update_cache: yes
         state: latest
       become: yes
 
-# Finds Samba's path
+# Find Samba's path
     - name: Find Samba Path
       ansible.builtin.command: whereis samba
       register: samba_path
 
-# Displays Samba's path
+# Display Samba's path
     - name: Return Samba Path
       ansible.builtin.debug:
         msg: "{{ samba_path.stdout }}"
 
+# FEATURE 2
 # Create the Sambashare directory to be the shared folder
     - name: Create Shared Folder
       ansible.builtin.file:
-        path: /etc/some_directory
+        path: "/home/{{ username }}/sambashare"
         state: directory
-        mode: '0755
+        mode: '755'
+      become: yes
+
+# Edit the Samba configuration file to add the shared folder
+    - name: Edit Samba Configuration
+      ansible.builtin.blockinfile:
+        path: /etc/samba/smb.conf
+        block: |
+          [sambashare]
+          path = /home/{{ username }}/sambashare
+          read only = no
+          browsable = yes
+          guest ok = yes
+      become: yes
+
+# Restart Samba to apply changes
+    - name: Restart Samba
+      ansible.builtin.command: sudo service smbd restart
+      become: yes
+
+# Set Samba password for the user
+    - name: Set Samba Password
+      ansible.builtin.expect:
+        command: sudo smbpasswd -a {{ username }}
+        responses:
+          'New SMB password:': '{{ password }}'
+          'Retype new SMB password:': '{{ password }}'
+      become: yes
+
+# Get available Shares
+    - name: Get Available Shares
+      ansible.builtin.expect:
+        command: sudo smbclient -L localhost -U {{ username }}
+        responses:
+          'Password for [WORKGROUP\{{ username }}]:': '{{ password }}'
+        register: samba_shares
+
+# Display available shares
+    - name: Display Available Shares
+      ansible.builtin.debug:
+        msg: "{{ samba_shares.stdout }}"
