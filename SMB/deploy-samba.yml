@@ -28,15 +28,15 @@
         state: latest
       become: yes
 
-# # Find Samba's path
-#     - name: Find Samba Path
-#       ansible.builtin.command: whereis samba
-#       register: samba_path
+# Find Samba's path
+    - name: Find Samba Path
+      ansible.builtin.command: whereis samba
+      register: samba_path
 
-# # Display Samba's path
-#     - name: Return Samba Path
-#       ansible.builtin.debug:
-#         msg: "{{ samba_path.stdout }}"
+# Display Samba's path
+    - name: Return Samba Path
+      ansible.builtin.debug:
+        msg: "{{ samba_path.stdout }}"
 
 # Create the Sambashare directory to be the shared folder
     - name: Create Shared Folder
@@ -84,3 +84,9 @@
         msg: "{{ samba_shares.stdout }}"
 
 # Feature 3
+# Create an example text file with some content 
+    - name: Create Example File
+      ansible.builtin.copy:
+        content: "Fooled ya Plankton, there's no formula here! Ahgagagagaga"
+        dest: "/home/{{ username }}/sambashare/secretformula.txt"
+      become: yes
