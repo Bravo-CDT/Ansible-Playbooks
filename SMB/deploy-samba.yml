@@ -1,0 +1,38 @@
+# Name: Calvin Fournier
+# Email: cpf7187@rit.edu
+# Team: Bravo
+# Date: 9/12/2026
+
+# This playbook installs Samba and deploys a server
+# Then uploads example files to it
+---
+-   name: Deploy Samba
+    hosts: all
+    
+
+    tasks:
+
+# Installs the Samba package
+    - name: Install Samba
+      ansible.builtin.apt:
+        name: samba
+        update_cache: yes
+        state: latest
+      become: yes
+
+# Finds Samba's path
+    - name: Find Samba Path
+      ansible.builtin.command: whereis samba
+      register: samba_path
+
+# Displays Samba's path
+    - name: Return Samba Path
+      ansible.builtin.debug:
+        msg: "{{ samba_path.stdout }}"
+
+# Create the Sambashare directory to be the shared folder
+    - name: Create Shared Folder
+      ansible.builtin.file:
+        path: /etc/some_directory
+        state: directory
+        mode: '0755
