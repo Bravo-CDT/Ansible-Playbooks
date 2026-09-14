@@ -22,22 +22,22 @@
       ansible.builtin.apt:
         name: 
           - samba
+          - smbclient
           - python3-pexpect
         update_cache: yes
         state: latest
       become: yes
 
-# Find Samba's path
-    - name: Find Samba Path
-      ansible.builtin.command: whereis samba
-      register: samba_path
+# # Find Samba's path
+#     - name: Find Samba Path
+#       ansible.builtin.command: whereis samba
+#       register: samba_path
 
-# Display Samba's path
-    - name: Return Samba Path
-      ansible.builtin.debug:
-        msg: "{{ samba_path.stdout }}"
+# # Display Samba's path
+#     - name: Return Samba Path
+#       ansible.builtin.debug:
+#         msg: "{{ samba_path.stdout }}"
 
-# FEATURE 2
 # Create the Sambashare directory to be the shared folder
     - name: Create Shared Folder
       ansible.builtin.file:
@@ -63,6 +63,7 @@
       ansible.builtin.command: sudo service smbd restart
       become: yes
 
+# FEATURE 2
 # Set Samba password for the user
     - name: Set Samba Password
       ansible.builtin.expect:
@@ -74,13 +75,12 @@
 
 # Get available Shares
     - name: Get Available Shares
-      ansible.builtin.expect:
-        command: sudo smbclient -L localhost -U {{ username }}
-        responses:
-          'Password for [WORKGROUP\{{ username }}]:': '{{ password }}'
-        register: samba_shares
+      ansible.builtin.command: smbclient -L localhost -U {{ username }}%{{ password }}
+      register: samba_shares
 
 # Display available shares
     - name: Display Available Shares
       ansible.builtin.debug:
         msg: "{{ samba_shares.stdout }}"
+
+# Feature 3

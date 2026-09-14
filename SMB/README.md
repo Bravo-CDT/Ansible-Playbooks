@@ -5,8 +5,9 @@
 
 This playbook will:
 - Install the Samba package
-- 
+- Install smbclient and pexpect as dependencies
 
  ## User Instructions
  The machine being accessed must be a Linux box with Ansible already installed and configured to be used from the deployment machine.
+ The variables "username" and "password" at the start should be replaced with the username and desired SMB password of the user that you are running on the target client.
  
