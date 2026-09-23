@@ -1,0 +1,102 @@
+---
+#==============================================================================================
+# README
+# name: Gabi Golemb
+# email: gbg6260@rit.edu
+# date: September 11th, 2026
+#
+# how-to-redeploy: update the hostname(s) and linux_user(s) in "Edit virtual alias map file" 
+# to match infrastructure. Unfortunately, due to the YAML using a pipe, using variables will 
+# not work. For "Send a test email", add a "hostname" variable to your inventory file.
+#==============================================================================================
+-   name: Setup SMTP
+    hosts: all
+    tasks:
+    
+      #===========================================
+      # Feature 1: Use apt to install Postfix
+      #===========================================
+    - name: Install Postfix
+      apt:
+        name: postfix
+        update_cache: yes # sudo apt update, in case of breaking changes
+        state: latest
+      become: yes
+
+
+      #==============================================================
+      # Feature 2: Use postconf to edit Postfix's config file
+      #==============================================================
+    - name: Configure mailbox folder
+      ansible.builtin.command: postconf -e 'home_mailbox=Maildir/'
+      become: yes
+
+    - name: Configure virtual alias map
+      ansible.builtin.command: postconf -e 'virtual_alias_maps=hash:/etc/postfix/virtual'
+      become: yes
+
+
+      #============================================================
+      # Feature 3: Create virtual-alias-mapping file
+      #============================================================
+
+    - name: Edit virtual alias map file
+      copy:
+        dest: '/etc/postfix/virtual'
+        content: | # recipient@hostname linux_user
+          ssquarepants@box2 root
+          stentacles@box2 root
+          ekrabs@box2 root
+
+      become: yes
+
+
+      #==============================================================================
+      # Feature 2a: Use postmap to apply the mapping file and restart Postfix
+      #==============================================================================
+    - name: Apply mappings in /etc/postfix/virtual
+      ansible.builtin.command: postmap /etc/postfix/virtual
+      become: yes
+
+    - name: Restart postfix to ensure mappings are applied
+      ansible.builtin.command: systemctl restart postfix
+      become: yes
+
+    - name: Set $MAIL to Maildir
+      ansible.builtin.lineinfile: 
+        path: /etc/environment
+        line: MAIL=~/Maildir
+      become: yes
+
+
+      #========================================
+      # Feature 1a: Use apt to install s-nail
+      #========================================
+    - name: Install s-nail
+      apt: 
+        name: s-nail
+        state: latest
+      become: yes
+
+
+      #===============================
+      # Feature 2b: Configure s-nail
+      #===============================
+    - name: Edit /etc/s-nail.rc
+      ansible.builtin.lineinfile: 
+        path: /etc/s-nail.rc 
+        line: set folder=Maildir
+      become: yes
+
+
+      #=====================================================
+      # Feature 4: Send a test email on Spongebob's behalf
+      #=====================================================
+    - name: Send a test email
+      community.general.mail:
+        host: {{ hostname }}
+        port: 25
+        subject: Testing, testing...
+        to: Eugene Krabs <ekrabs@{{ hostname }}>
+        from: Spongebob Squarepants <ssquarepants@{{ hostname }}>
+        body: We are ship shape and ready to go!
