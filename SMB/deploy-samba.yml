@@ -1,0 +1,92 @@
+# Name: Calvin Fournier
+# Email: cpf7187@rit.edu
+# Team: Bravo
+# Date: 9/12/2026
+
+# This playbook installs Samba and deploys a server
+# Then uploads example files to it
+---
+-   name: Deploy Samba
+    hosts: all
+    
+# Variables should be customized for future usage, see README.md
+    vars:
+      username: "cyberrange"
+      password: "Password123"
+
+    tasks:
+
+# FEATURE 1
+# Installs the Samba package
+    - name: Install Samba and Dependencies
+      ansible.builtin.apt:
+        name: 
+          - samba
+          - smbclient
+          - python3-pexpect
+        update_cache: yes
+        state: latest
+      become: yes
+
+# Find Samba's path
+    - name: Find Samba Path
+      ansible.builtin.command: whereis samba
+      register: samba_path
+
+# Display Samba's path
+    - name: Return Samba Path
+      ansible.builtin.debug:
+        msg: "{{ samba_path.stdout }}"
+
+# Create the Sambashare directory to be the shared folder
+    - name: Create Shared Folder
+      ansible.builtin.file:
+        path: "/home/{{ username }}/sambashare"
+        state: directory
+        mode: '755'
+      become: yes
+
+# Edit the Samba configuration file to add the shared folder
+    - name: Edit Samba Configuration
+      ansible.builtin.blockinfile:
+        path: /etc/samba/smb.conf
+        block: |
+          [sambashare]
+          path = /home/{{ username }}/sambashare
+          read only = no
+          browsable = yes
+          guest ok = yes
+      become: yes
+
+# Restart Samba to apply changes
+    - name: Restart Samba
+      ansible.builtin.command: sudo service smbd restart
+      become: yes
+
+# FEATURE 2
+# Set Samba password for the user
+    - name: Set Samba Password
+      ansible.builtin.expect:
+        command: sudo smbpasswd -a {{ username }}
+        responses:
+          'New SMB password:': '{{ password }}'
+          'Retype new SMB password:': '{{ password }}'
+      become: yes
+
+# Get available Shares
+    - name: Get Available Shares
+      ansible.builtin.command: smbclient -L localhost -U {{ username }}%{{ password }}
+      register: samba_shares
+
+# Display available shares
+    - name: Display Available Shares
+      ansible.builtin.debug:
+        msg: "{{ samba_shares.stdout }}"
+
+# Feature 3
+# Create an example text file with some content 
+    - name: Create Example File
+      ansible.builtin.copy:
+        content: "Fooled ya Plankton, there's no formula here! Ahgagagagaga"
+        dest: "/home/{{ username }}/sambashare/secretformula.txt"
+      become: yes
