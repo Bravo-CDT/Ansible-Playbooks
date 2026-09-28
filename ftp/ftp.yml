@@ -1,0 +1,74 @@
+# Joshua Elliott
+# Email: jve8802@rit.edu
+# Date: 09/11/2026
+
+# This playbook installs, configures, and manages a vsftpd FTP server
+# on an Ubuntu Linux system.
+
+# Requirements:
+# - ufw installed on the target
+---
+- name: Install and configure FTP server
+  hosts: all
+  become: true
+
+  tasks:
+
+    # Install the FTP server package.
+    - name: Install vsftpd
+      ansible.builtin.apt:
+        name: vsftpd
+        state: present
+        update_cache: true
+
+    # Configure vsftpd using Ansible's blockinfile module.
+    - name: Configure vsftpd
+      ansible.builtin.blockinfile:
+        path: /etc/vsftpd.conf
+        marker: "# {mark} ANSIBLE MANAGED FTP CONFIGURATION"
+        block: |
+          listen=YES
+          listen_ipv6=NO
+          local_enable=YES
+          write_enable=YES
+          chroot_local_user=YES
+          allow_writeable_chroot=YES
+          dirlist_enable=YES
+          download_enable=YES
+          anonymous_enable=NO
+          ftpd_banner=Welcome to the Ansible-managed FTP server.
+      notify: Restart vsftpd
+
+    # Start the FTP service and enable it at boot.
+    - name: Start and enable vsftpd
+      ansible.builtin.systemd:
+        name: vsftpd
+        state: started
+        enabled: true
+
+    # Check whether FTP is already allowed through UFW.
+    - name: Check whether FTP is already allowed
+      ansible.builtin.command:
+        cmd: ufw status
+      register: ufw_status
+      changed_when: false
+
+    # Allow FTP traffic through the Ubuntu firewall.
+    - name: Allow FTP through UFW
+      ansible.builtin.command:
+        cmd: ufw allow 21/tcp
+      when: "'21/tcp' not in ufw_status.stdout"
+
+    # Reload UFW when the FTP rule was added.
+    - name: Reload UFW
+      ansible.builtin.command:
+        cmd: ufw reload
+      when: "'21/tcp' not in ufw_status.stdout"
+
+  handlers:
+
+    # Restart vsftpd only when its configuration changes.
+    - name: Restart vsftpd
+      ansible.builtin.systemd:
+        name: vsftpd
+        state: restarted
