@@ -12,6 +12,13 @@
    hosts: windows
 
    vars:
+
+    grey_team_password: "Formula1"
+
+    grey_team_users:
+       - kingneptune
+       - paintythepirate
+    
     web_root: "C:/inetpub/wwwroot"
 
 # Photo's for the KCruSTy KRAbC
@@ -54,6 +61,12 @@
             </body>
           </html>
         dest: "{{ web_root }}//index.html"
+
+# Creating Grey Team Accounts
+    - name: Create Grey Team Accounts
+      ansible.windows.win_user:
+      name: "{{ item }}"
+
 
 # Self Signing Cert
     - name: Self-signed cert for HTTPS
