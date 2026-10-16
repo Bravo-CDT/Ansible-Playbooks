@@ -1,0 +1,74 @@
+---
+# CA Set up
+- name: Install the ADCS-Cert-Authority feature and RSAT tools
+  ansible.windows.win_feature:
+    name: ADCS-Cert-Authority
+    include_management_tools: true
+    state: present
+
+# Making sure that the CA service is not already configured before attempting to configure it
+- name: Check if CA service is already configured
+  ansible.windows.win_service:
+    name: CertSvc
+  register: ca_service
+
+# Configures AD CS Root CA
+# Configurable: CAType (StandaloneRootCA/EnterpriseRootCA), CACommonName,
+# KeyLength (2048/4096), HashAlgorithmName (SHA256/384/512), 
+# CryptoProviderName, and Database/Log directories
+- name: Configure Enterprise Root CA
+  ansible.windows.win_shell: |
+    Install-AdcsCertificationAuthority `
+      -CAType EnterpriseRootCA `
+      -CACommonName "{{ CACommonName }}" `
+      -CryptoProviderName "RSA#Microsoft Software Key Storage Provider" `
+      -KeyLength 4096 `
+      -HashAlgorithmName SHA256 `
+      -DatabaseDirectory "C:\windows\system32\CertLog" `
+      -LogDirectory "C:\windows\system32\CertLog" `
+      -OverwriteExistingKey `
+      -Force
+  when: ca_service.state != 'running'
+
+    # Find the newest CA certificate for export
+    # - name: Get the thumbprint of the newest installed CA certificate
+    #   ansible.windows.win_shell: |
+    #     (Get-ChildItem -Path Cert:\LocalMachine\Root | Where-Object { $_.Subject -like "*{{ CACommonName }}*" } | Sort-Object NotBefore -Descending | Select-Object -First 1).Thumbprint.Trim()
+    #   register: ca_thumbprint
+
+    # # Export the root CA certificate to a temporary location on the Windows Server
+    # - name: Export root CA certificate
+    #   ansible.windows.win_certificate_store:
+    #     path: C:\Windows\Temp\RootCA.pem # Location where the root CA certificate will be exported, can be changed to any other location
+    #     state: exported
+    #     file_type: pem # this can be changed to der or pfx
+    #     store_location: LocalMachine
+    #     store_name: Root
+    #     thumbprint: "{{ ca_thumbprint.stdout_lines[0] }}"
+
+    # # Fetch the exported root CA certificate to the Ansible controller for the further distribution to client machines
+    # - name: Copy Root CA to Ansible Controller
+    #   ansible.builtin.fetch:
+    #     src: C:\Windows\Temp\RootCA.pem 
+    #     dest: ./RootCA.pem # Location on the Ansible controller where the root CA certificate will be stored, can be changed to any other location
+    #     flat: true
+
+# # Distribute the exported root CA certificate to both Windows and Linux client machines
+# - name: Copy Root Certificate to Linux Machines
+#   hosts: linux
+#   become: true # Making sure necessary permissions are present to copy and import the certificate
+#   vars:
+#     path_to_root_cert: "./RootCA.pem"
+#   tasks:
+#     - name: Copy Root CA certificate to Linux machines
+#       ansible.builtin.copy:
+#         src: "{{ path_to_root_cert }}"
+#         dest: "/usr/local/share/ca-certificates/RootCA.crt"
+#         owner: root
+#         group: root
+#         mode: '0644'
+#       register: ca_cert
+
+#     - name: Import Root CA certificate into Trusted Root Certification Authorities
+#       ansible.builtin.command: update-ca-certificates
+#       when: ca_cert.changed

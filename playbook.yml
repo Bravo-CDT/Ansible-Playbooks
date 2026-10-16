@@ -1,0 +1,60 @@
+---
+- name: Set up AD DC
+  hosts: windows_ad
+  roles:
+    - dc-set-up
+  tags:
+    - dc
+    - full-deploy
+
+- name: Join Client to Domain
+  hosts: windows_client
+  roles:
+    - join-domain
+  tags:
+    - join-domain
+    - full-deploy
+
+- name: Set Up CA
+  hosts: windows_ca
+  roles:
+    - ca-set-up
+  tags:
+    - ca
+    - full-deploy
+
+# - name: Telnet service
+#   hosts: kelpdelivery
+#   tasks:
+#     roles:
+#       - telnet-service
+#     tags:
+#       - telnet
+#       - full-deploy
+
+# - name: FTP
+#   hosts: goldenspatula
+#   tasks:
+#     roles:
+#       - ftp-service
+#     tags:
+#       - ftp
+#       - full-deploy
+
+# - name: IIS
+#   hosts: bubblechat
+#   tasks:
+#     roles:
+#       - iis-service
+#     tags:
+#       - iis
+#       - full-deploy
+  
+# - name: Openfire
+#   hosts: treedome
+#   tasks:
+#     roles:
+#       - openfire-service
+#     tags:
+#       - openfire
+#       - full-deploy

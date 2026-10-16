@@ -1,0 +1,4 @@
+domain_name: bravo.local # Replace with your domain name
+domain_admin_user: "kingneptune" # Replace with a domain admin user
+domain_admin_password: "Password123!" # Replace with the password for the domain admin user
+local_user_password: "Password123!"
