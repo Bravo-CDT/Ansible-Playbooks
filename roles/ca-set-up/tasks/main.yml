@@ -13,22 +13,21 @@
   register: ca_service
 
 # Configures AD CS Root CA
-# Configurable: CAType (StandaloneRootCA/EnterpriseRootCA), CACommonName,
-# KeyLength (2048/4096), HashAlgorithmName (SHA256/384/512), 
-# CryptoProviderName, and Database/Log directories
 - name: Configure Enterprise Root CA
   ansible.windows.win_shell: |
+    $ErrorActionPreference = 'Stop'
+    Import-Module ADCSDeployment
+
     Install-AdcsCertificationAuthority `
       -CAType EnterpriseRootCA `
       -CACommonName "{{ CACommonName }}" `
       -CryptoProviderName "RSA#Microsoft Software Key Storage Provider" `
       -KeyLength 4096 `
       -HashAlgorithmName SHA256 `
-      -DatabaseDirectory "C:\windows\system32\CertLog" `
-      -LogDirectory "C:\windows\system32\CertLog" `
-      -OverwriteExistingKey `
       -Force
-  when: ca_service.state != 'running'
+  become: true
+  become_method: runas
+  become_user: " {{ domain_admin }}"
 
     # Find the newest CA certificate for export
     # - name: Get the thumbprint of the newest installed CA certificate

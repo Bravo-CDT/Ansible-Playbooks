@@ -1,1 +1,3 @@
 CACommonName: "bravo-OM7755-WINSRV20-CA"
+domain_user: 'bravo\Administrator'
+ansible_become_password: "Password123!"
