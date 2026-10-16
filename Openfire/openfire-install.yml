@@ -1,0 +1,71 @@
+---
+# This playbook will install the Openfire chat server on a Windows machine.
+- name: Install Openfire Chat Server
+  hosts: windows
+  gather_facts: false
+
+  vars:
+    java_url: "https://api.adoptium.net/v3/installer/latest/17/ga/windows/x64/jre/hotspot/normal/eclipse?project=jdk" # URL used to download and install Java
+    # URL used to download and install the Openfire Windows installer
+    openfire_url: "https://download.igniterealtime.org/openfire/openfire_5_1_2_x64.exe"
+    openfire_path: 'C:\Program Files\Openfire'
+
+  tasks:
+    # Install Java on the Windows machine using win_package
+    - name: Install Java 17 JRE
+      ansible.windows.win_package:
+        path: "{{ java_url }}"
+        state: present
+        # Installs Java and configures environment variables
+        arguments: 'ADDLOCAL=FeatureMain,FeatureEnvironment,FeatureJavaHome INSTALLDIR="C:\Program Files\Temurin"'
+
+    # Download and install Openfire directly from the installer URL
+    - name: Install Openfire
+      ansible.windows.win_package:
+        path: "{{ openfire_url }}"
+        arguments: "-q"
+        state: present
+        # If this file already exists, Ansible considers Openfire installed and will not reinstall it.
+        creates_path: "{{ openfire_path }}\\bin\\openfire-service.exe"
+        # Waits for any child installer processes to finish before continuing.
+        wait_for_children: true
+
+    # Start the Openfire service and configure it to start whenever Windows boots.
+    - name: Start Openfire service
+      ansible.windows.win_service:
+        name: Openfire
+        state: started
+        start_mode: auto
+
+    # FEATURE 1 - WINDOWS FIREWALL MANAGEMENT
+    # Allow clients to connect to Openfire using TCP 5222
+    - name: Allow Openfire traffic through Windows Firewall
+      community.windows.win_firewall_rule:
+        name: "Openfire XMPP"
+        localport: 5222
+        action: allow
+        direction: in
+        protocol: tcp
+        state: present
+        enabled: true
+
+    # FEATURE 2 - OPENFIRE CONFIGURATION MANAGEMENT
+    # Set the maximum memory Openfire can use to 1 GB.
+    - name: Configure Openfire memory
+      ansible.windows.win_copy:
+        content: "-Xmx1024m"
+        dest: "{{ openfire_path }}\\bin\\openfire-service.vmoptions"
+    # Restart Openfire to apply the configuration.
+    - name: Restart Openfire
+      ansible.windows.win_service:
+        name: Openfire
+        state: restarted
+
+    # FEATURE 3 - OPENFIRE AVAILABILITY CHECK
+    # Wait for the Openfire web setup/admin interface to become available and uses Port 9090 for the web interface.
+    - name: Verify Openfire is responding on port 9090
+      ansible.windows.win_wait_for:
+        host: 127.0.0.1
+        port: 9090
+        state: started
+        timeout: 120
