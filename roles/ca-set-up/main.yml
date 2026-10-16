@@ -1,12 +1,6 @@
-# Name: Oleksandr Maniukhin
-# Email: om7755@rit.edu
-# Date: 09/10/2026
-
-# This playbook installs and configures a Standalone Root CA on a Windows Server, 
-# exports the root CA certificate, and distributes it to both Windows and Linux client machines.
 ---
+# CA Set up
 - name: Install Active Directory Certificate Services (AD CS)
-  hosts: windows_servers
   vars:
     CACommonName: "bravocdt-OM7755-WINSRV20-CA" # default naming convention for CA common name, can be changed to any desired name
   
@@ -28,10 +22,10 @@
     # Configurable: CAType (StandaloneRootCA/EnterpriseRootCA), CACommonName,
     # KeyLength (2048/4096), HashAlgorithmName (SHA256/384/512), 
     # CryptoProviderName, and Database/Log directories
-    - name: Configure Standalone Root CA
+    - name: Configure Enterprise Root CA
       ansible.windows.win_shell: |
         Install-AdcsCertificationAuthority `
-          -CAType StandaloneRootCA `
+          -CAType EnterpriseRootCA `
           -CACommonName "{{ CACommonName }}" `
           -CryptoProviderName "RSA#Microsoft Software Key Storage Provider" `
           -KeyLength 4096 `
@@ -66,25 +60,6 @@
         flat: true
 
 # Distribute the exported root CA certificate to both Windows and Linux client machines
-- name: Copy Root Certificate to Windows Machines
-  hosts: windows_clients
-  vars:
-    path_to_root_cert: "./RootCA.pem" # Path on Ansible controller where the root CA certificate is stored
-  tasks:
-    - name: Copy Root CA certificate to client machines
-      ansible.windows.win_copy:
-        src: "{{ path_to_root_cert }}"
-        dest: "C:\\Windows\\Temp\\RootCA.pem" # Location on the windows client, can be changed to any other location
-
-    # Imports copied erlier from ansible controller root CA certificate 
-    # into the Trusted Root Certification Authorities store on the Windows client machines
-    - name: Import Root CA certificate into Trusted Root Certification Authorities
-      ansible.windows.win_certificate_store: 
-        path: "C:\\Windows\\Temp\\RootCA.pem"
-        state: present
-        store_location: LocalMachine
-        store_name: Root
-
 - name: Copy Root Certificate to Linux Machines
   hosts: linux
   become: true # Making sure necessary permissions are present to copy and import the certificate

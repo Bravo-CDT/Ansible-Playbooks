@@ -1,7 +1,5 @@
-
 ---
 - name: Promote WinServ 2019 to DC
-  hosts: windows-dc
   vars:
     safe_mode_password: "Password123!" #Replace with a secure password
     domain_name: bravo.local # Repace with a theme name
@@ -21,13 +19,13 @@
         include_management_tools: yes
 
     - name: Create a new AD forest
-      ansible.windows.win_domain:
+      microsoft.ad.domain:
         dns_domain_name: "{{ domain_name }}"
         domain_netbios_name: "{{ netbios_name }}"
         safe_mode_password: "{{ safe_mode_password }}"
-        state: domain
         install_dns: true
       register: domain_setup
+      no_log: true
 
     - name: Reboot after domain creation
       ansible.windows.win_reboot:
@@ -123,8 +121,38 @@
           add:
             - "Domain Users"
       loop:
-        - { identity: "gary", firstname: "Gary", surname: "Snail", password: "{{ domain_users_password }}", description: "SpongeBob's loyal pet snail. Communicates through meows and secretly possesses remarkable intelligence." }
-        - { identity: "puff", firstname: "Mrs", surname: "Puff", password: "{{ domain_users_password }}", description: "Boating school instructor in Bikini Bottom. Endlessly struggles to teach SpongeBob how to drive." }
-        - { identity: "larry", firstname: "Larry", surname: "Lobster", password: "{{ domain_users_password }}", description: "Muscular lifeguard at Goo Lagoon. Dedicated to fitness, beach safety, and bodybuilding." }
-        - { identity: "mermaidman", firstname: "Mermaid", surname: "Man", password: "{{ domain_users_password }}", description: "Retired underwater superhero. Defends Bikini Bottom from villains alongside Barnacle Boy." }
-        - { identity: "barnacleboy", firstname: "Barnacle", surname: "Boy", password: "{{ domain_users_password }}", description: "Mermaid Man's longtime superhero sidekick. Fights underwater crime while seeking greater recognition." }
+        - { identity: "gary", firstname: "Gary", surname: "Snail", password: "{{ blue_team_users_password }}", description: "SpongeBob's loyal pet snail. Communicates through meows and secretly possesses remarkable intelligence." }
+        - { identity: "puff", firstname: "Mrs", surname: "Puff", password: "{{ blue_team_users_password }}", description: "Boating school instructor in Bikini Bottom. Endlessly struggles to teach SpongeBob how to drive." }
+        - { identity: "larry", firstname: "Larry", surname: "Lobster", password: "{{ blue_team_users_password }}", description: "Muscular lifeguard at Goo Lagoon. Dedicated to fitness, beach safety, and bodybuilding." }
+        - { identity: "mermaidman", firstname: "Mermaid", surname: "Man", password: "{{ blue_team_users_password }}", description: "Retired underwater superhero. Defends Bikini Bottom from villains alongside Barnacle Boy." }
+        - { identity: "barnacleboy", firstname: "Barnacle", surname: "Boy", password: "{{ blue_team_users_password }}", description: "Mermaid Man's longtime superhero sidekick. Fights underwater crime while seeking greater recognition." }
+
+    # Group Policy 
+    - name: Ensure GroupPolicy module is available
+      ansible.windows.win_feature:
+        name: GPMC
+        state: present
+    
+    # Copy Wallpaper Image to DC
+    - name: Copy Wallpaper Image to DC
+      ansible.windows.win_copy:
+        src: "./img1.jpg"
+        dest: "C:\\Windows\\Web\\Wallpaper\\Theme1\\img1.jpg"
+    
+    # Enforce Wallpaper Policy
+    - name: Enforce Wallpaper Policy
+      ansible.windows.win_shell: |
+        Import-Module GroupPolicy
+        $GPOName = "Enforce Wallpaper Policy"
+        $WallpaperPath = "C:\\Windows\\Web\\Wallpaper\\Theme1\\img1.jpg"
+        
+        # Create GPO if it doesn't exist
+        if (-not (Get-GPO -Name $GPOName -ErrorAction SilentlyContinue)) {
+            New-GPO -Name $GPOName
+        }
+        
+        # Set the wallpaper policy
+        Set-GPRegistryValue -Name $GPOName -Key "-Key "HKCU\Software\Microsoft\Windows\CurrentVersion\Policies\System"" -ValueName "Wallpaper" -Type String -Value $WallpaperPath
+        
+        # Link the GPO to the domain
+        New-GPLink -Name $GPOName -Target "DC={{ domain_name.split('.')[0] }},DC={{ domain_name.split('.')[1] }}" -Enforced Yes
