@@ -13,6 +13,15 @@
       - '.\grey'
     state: present
 
+- name: Create wallpaper directory
+  ansible.windows.win_file:
+    path: 'C:\ProgramData\SpongeBobTheme'
+    state: directory
+
+- name: Copy assigned wallpaper
+  ansible.windows.win_copy:
+    src: "{{ playbook_dir }}/Theme-assets/{{ wallpaper_file }}"
+    dest: 'C:\ProgramData\SpongeBobTheme\wallpaper.jpg'
 
 - name: Change DNS settings
   ansible.windows.win_dns_client:

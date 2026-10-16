@@ -8,7 +8,7 @@
     - full-deploy
 
 - name: Join Client to Domain
-  hosts: windows_client
+  hosts: windows_clients
   roles:
     - join-domain
   tags:
@@ -16,45 +16,45 @@
     - full-deploy
 
 - name: Set Up CA
-  hosts: windows_ca
+  hosts: orderwindow
   roles:
     - ca-set-up
   tags:
     - ca
     - full-deploy
 
-# - name: Telnet service
-#   hosts: kelpdelivery
-#   tasks:
-#     roles:
-#       - telnet-service
-#     tags:
-#       - telnet
-#       - full-deploy
+- name: Telnet service
+  hosts: kelpdelivery
+  tasks:
+    roles:
+      - telnet-service
+    tags:
+      - telnet
+      - full-deploy
 
-# - name: FTP
-#   hosts: goldenspatula
-#   tasks:
-#     roles:
-#       - ftp-service
-#     tags:
-#       - ftp
-#       - full-deploy
+- name: FTP
+  hosts: goldenspatula
+  tasks:
+    roles:
+      - ftp-service
+    tags:
+      - ftp
+      - full-deploy
 
-# - name: IIS
-#   hosts: bubblechat
-#   tasks:
-#     roles:
-#       - iis-service
-#     tags:
-#       - iis
-#       - full-deploy
+- name: IIS
+  hosts: bubblechat
+  tasks:
+    roles:
+      - iis-service
+    tags:
+      - iis
+      - full-deploy
   
-# - name: Openfire
-#   hosts: treedome
-#   tasks:
-#     roles:
-#       - openfire-service
-#     tags:
-#       - openfire
-#       - full-deploy
+- name: Openfire
+  hosts: treedome
+  tasks:
+    roles:
+      - openfire-service
+    tags:
+      - openfire
+      - full-deploy
