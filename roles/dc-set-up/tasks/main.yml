@@ -2,7 +2,7 @@
 # local Account for greyteam
 - name: Create Local Users For Grey Team
   ansible.windows.win_user:
-    name: greyteam
+    name: greyteamadmin
     password: "{{ local_user_password }}"
     state: present
 
@@ -10,7 +10,7 @@
   ansible.windows.win_group_membership:
     name: Administrators
     members:
-      - '.\greyteam'
+      - '.\greyteamadmin'
     state: present
 
 # local account for blue team
