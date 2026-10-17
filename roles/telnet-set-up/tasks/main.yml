@@ -20,7 +20,7 @@
     error_action: stop
     script: |
       if (-not (Get-Service inetd -ErrorAction SilentlyContinue)) {
-          & C:\cygwin64\bin\bash.exe -lc '/usr/bin/iu-config -y -w "{{ cygwin_service_password }}"'
+          & C:\cygwin64\bin\bash.exe -lc '/usr/bin/iu-config -y -w "{{ blue_team_admins_password }}"'
 
           if ($LASTEXITCODE -ne 0) {
               throw "Failed to configure inetd"
