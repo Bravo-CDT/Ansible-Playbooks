@@ -1,6 +1,6 @@
 safe_mode_password: "Password123!" #Replace with a secure password
-domain_name: bravo.local # Repace with a theme name
-netbios_name: BRAVO # Repace with a theme name
+domain_name: krusty.krab # Repace with a theme name
+netbios_name: KRUSTY # Repace with a theme name
 grey_team_users_password: "Password123!" #Replace with a secure password
 blue_team_admins_password: "Patty321!" #Replace with a secure password
 blue_team_users_password: "Patty321!" #Replace
