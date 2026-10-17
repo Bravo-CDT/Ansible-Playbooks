@@ -25,6 +25,7 @@
   hosts: windows_clients
   vars: 
     <<: *shared_vars
+    ansible_user: Administrator
   roles:
     - join-domain
   tags:

@@ -1,31 +1,31 @@
 ---
-# local Account for greyteam
-- name: Create Local Users For Grey Team
-  ansible.windows.win_user:
-    name: greyteamadmin
-    password: "{{ local_user_password }}"
-    state: present
+# # local Account for greyteam
+# - name: Create Local Users For Grey Team
+#   ansible.windows.win_user:
+#     name: greyteamadmin
+#     password: "{{ local_user_password }}"
+#     state: present
 
-- name: Add local user to Administrators
-  ansible.windows.win_group_membership:
-    name: Administrators
-    members:
-      - '.\greyteamadmin'
-    state: present
+# - name: Add local user to Administrators
+#   ansible.windows.win_group_membership:
+#     name: Administrators
+#     members:
+#       - '.\greyteamadmin'
+#     state: present
 
-# local account for blue team
-- name: Create Local Users for Blue Team
-  ansible.windows.win_user:
-    name: jellyfish
-    password: "{{ blue_team_admins_password }}"
-    state: present
+# # local account for blue team
+# - name: Create Local Users for Blue Team
+#   ansible.windows.win_user:
+#     name: jellyfish
+#     password: "{{ blue_team_admins_password }}"
+#     state: present
 
-- name: Add local user to Administrators
-  ansible.windows.win_group_membership:
-    name: Administrators
-    members:
-      - '.\jellyfish'
-    state: present
+# - name: Add local user to Administrators
+#   ansible.windows.win_group_membership:
+#     name: Administrators
+#     members:
+#       - '.\jellyfish'
+#     state: present
 
 # AD DC set up
 - name: Install ADDS feature
