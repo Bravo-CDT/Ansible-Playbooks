@@ -49,7 +49,7 @@
 - name: Join Windows Machines to Domain
   microsoft.ad.membership:
     dns_domain_name: "{{ domain_name }}"
-    domain_admin_user: "{{ domain_admin_user }}@{{ domain_name }}"
+    domain_admin_user: "{{ domain_admin }}@{{ domain_name }}"
     domain_admin_password: "{{ domain_admin_password }}"
     state: domain
     reboot: true
