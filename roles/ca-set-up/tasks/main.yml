@@ -104,78 +104,19 @@
     flat: true
 
 
-- name: Grant IIS server permission to enroll WebServer certificates
+- name: Allow ORDERWINDOW to request WebServer certificates
   ansible.windows.win_powershell:
     error_action: stop
     script: |
-      param([string]$ComputerAccount)
+      $ConfigDN = ([ADSI]"LDAP://RootDSE").configurationNamingContext
+      $Template = "CN=WebServer,CN=Certificate Templates,CN=Public Key Services,CN=Services,$ConfigDN"
 
-      $RootDSE = [ADSI]"LDAP://RootDSE"
-      $ConfigDN = $RootDSE.configurationNamingContext
+      & dsacls.exe $Template /G 'KRUSTY\ORDERWINDOW$:GR'
+      if ($LASTEXITCODE -ne 0) { throw "Failed to grant Read" }
 
-      $TemplatePath = "LDAP://CN=WebServer,CN=Certificate Templates,CN=Public Key Services,CN=Services,$ConfigDN"
-
-      $Template = [ADSI]$TemplatePath
-      $ACL = $Template.ObjectSecurity
-
-      $SID = (New-Object System.Security.Principal.NTAccount($ComputerAccount)).Translate(
-          [System.Security.Principal.SecurityIdentifier]
-      )
-
-      $Allow = [System.Security.AccessControl.AccessControlType]::Allow
-      $Read = [System.DirectoryServices.ActiveDirectoryRights]::GenericRead
-      $Enroll = [System.DirectoryServices.ActiveDirectoryRights]::ExtendedRight
-      $EnrollGUID = [Guid]"0e10c968-78fb-11d2-90e4-00c04f79dc55"
-
-      $Rules = $ACL.GetAccessRules(
-          $true,
-          $true,
-          [System.Security.Principal.SecurityIdentifier]
-      )
-
-      $HasRead = @($Rules | Where-Object {
-          $_.IdentityReference.Value -eq $SID.Value -and
-          $_.AccessControlType -eq $Allow -and
-          ($_.ActiveDirectoryRights -band $Read) -eq $Read
-      }).Count -gt 0
-
-      $HasEnroll = @($Rules | Where-Object {
-          $_.IdentityReference.Value -eq $SID.Value -and
-          $_.AccessControlType -eq $Allow -and
-          ($_.ActiveDirectoryRights -band $Enroll) -ne 0 -and
-          ($_.ObjectType -eq $EnrollGUID -or $_.ObjectType -eq [Guid]::Empty)
-      }).Count -gt 0
-
-      $Changed = $false
-
-      if (-not $HasRead) {
-          $ACL.AddAccessRule(
-              [System.DirectoryServices.ActiveDirectoryAccessRule]::new(
-                  $SID, $Read, $Allow
-              )
-          )
-          $Changed = $true
-      }
-
-      if (-not $HasEnroll) {
-          $ACL.AddAccessRule(
-              [System.DirectoryServices.ActiveDirectoryAccessRule]::new(
-                  $SID, $Enroll, $Allow, $EnrollGUID
-              )
-          )
-          $Changed = $true
-      }
-
-      if ($Changed) {
-          $Template.ObjectSecurity = $ACL
-          $Template.CommitChanges()
-      }
-
-      $Ansible.Changed = $Changed
-
-    parameters:
-      ComputerAccount: "{{ iis_computer_account }}"
+      & dsacls.exe $Template /G 'KRUSTY\ORDERWINDOW$:CA;Enroll'
+      if ($LASTEXITCODE -ne 0) { throw "Failed to grant Enroll" }
 
   become: true
   become_method: runas
-  become_user: "{{ domain_admin }}"
+  become_user: "{{ domain_admin }}
