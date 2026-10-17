@@ -33,7 +33,7 @@
     - full-deploy
 
 - name: Set Up CA
-  hosts: orderwindow
+  hosts: goldenspatula
   vars: 
     ca_shared: &ca_shared
       CACommonName: "KRUSTY-KRAB-CA"
@@ -41,6 +41,7 @@
     <<: *ca_shared
     <<: *shared_vars
     ansible_user: "{{ netbios_name }}\\Administrator"
+    iis_computer_account: 'KRUSTY\ORDERWINDOW$'
   roles:
     - ca-set-up
   tags:
@@ -71,7 +72,7 @@
     - full-deploy
 
 - name: IIS
-  hosts: bubblechat
+  hosts: orderwindow
   vars:
     <<: *shared_vars
     <<: *ca_shared
@@ -85,7 +86,7 @@
     - full-deploy
 
 - name: Openfire
-  hosts: treedome
+  hosts: bubblechat
   vars:
     <<: *shared_vars
     ansible_user: "{{ netbios_name }}\\Administrator"
