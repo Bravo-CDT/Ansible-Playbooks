@@ -76,11 +76,7 @@
     <<: *ca_shared
     ansible_user: "{{ netbios_name }}\\Administrator"
     web_root: "C:/inetpub/wwwroot"
-    wallpaper_photos:
-        - files/wallpapers/photo1.jpg
-        - files/wallpapers/photo2.jpg
-    # Placing the photos in a directory on the Windows Machine
-    wallpaper_dest_dir: "C:/Windows/Web/Wallpaper/Competition"
+    web_dns_name: "bubblechat.{{ domain_name }}"
   roles:
     - iis-set-up
   tags:

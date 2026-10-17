@@ -76,7 +76,7 @@
       }
 
     parameters:
-      DnsName: "{{ domain_name }}"
+      DnsName: "{{ web_dns_name }}"
       CAName: "{{ CACommonName }}"
 
   become: true
@@ -95,7 +95,7 @@
         - protocol: https
           ip: '*'
           port: 443
-          hostname: "orderwindow.{{ domain_name }}"
+          hostname: "{{ web_dns_name }}"
           use_sni: true
           certificate_hash: "{{ iis_certificate.result.thumbprint }}"
           certificate_store_name: My
