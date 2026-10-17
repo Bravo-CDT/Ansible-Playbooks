@@ -40,7 +40,7 @@
 # Install chrome
 - name: Copy Google Chrome
   win_copy:
-    src: "ChromeSetup.exe"
+    src: "{{ playbook_dir }}/Theme-assets/ChromeSetup.exe"
     dest: 'C:\Windows\Temp\ChromeSetup.exe'
 
 - name: Silently Install Chrome
