@@ -1,4 +1,17 @@
 ---
+- name: Create Local Users
+  ansible.windows.win_user:
+    name: grey
+    password: "{{ local_user_password }}"
+    state: present
+
+- name: Add local user to Administrators
+  ansible.windows.win_group_membership:
+    name: Administrators
+    members:
+      - '.\grey'
+    state: present
+
 - name: Install ADDS feature
   ansible.windows.win_feature:
     name:
@@ -135,12 +148,6 @@
   ansible.windows.win_file:
     path: '{{ netlogon_share.stdout | trim }}\Theme-assets'
     state: directory
-
-# Copy Wallpaper
-- name: Copy wallpaper to NETLOGON
-  ansible.windows.win_copy:
-    src: "{{ wallpaper_path }}"
-    dest: '{{ netlogon_share.stdout | trim }}\Theme-assets\wallpaper.jpg'
 
 # Copy Cursor
 - name: Copy cursor to NETLOGON
