@@ -3,6 +3,7 @@
   hosts: treedome
   vars: 
     shared_vars: &shared_vars
+      netbios_name: KRUSTY
       domain_name: "KRUSTY.KRAB"
       domain_admin: "kingneptune" # grey team admin
       local_user_password: "PineappleRush82!" # Used for Grey Team Local Admin
@@ -10,7 +11,6 @@
       ansible_password: "IWant2Sleep!" # Built in administator
       grey_team_users_password: "Pizza4Breakfast!" #Replace with a secure password
     <<: *shared_vars
-    netbios_name: KRUSTY
     safe_mode_password: "Coffee@Midnight8" #Replace with a secure password
     blue_team_users_password: "Patty321!" #Replace
     cursor_path: "{{ playbook_dir }}/Theme-assets/cursor.cur"
