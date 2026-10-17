@@ -12,22 +12,9 @@
    hosts: windows
 
    vars:
-
-    grey_team_password: "Formula1"
-
-    grey_team_users:
-       - kingneptune
-       - paintythepirate
-    
     web_root: "C:/inetpub/wwwroot"
 
-# Photo's for the KCruSTy KRAbC
-    wallpaper_photos:
-      - files/wallpapers/photo1.jpg
-      - files/wallpapers/photo2.jpg
-
 # Placing the photos in a directory on the Windows Machine
-    wallpaper_dest_dir: "C:/Windows/Web/Wallpaper/Competition"
 
 
    tasks:
@@ -52,21 +39,161 @@
     - name: "Index Page for Krusty Krab"
       win_copy:
         content:  |
-          <html>
-            <head><title> Krusty Krab </title></head>
+          <!DOCTYPE html>
+          <html lang="en">
+            <head>
+              <meta charset="UTF-8">
+              <meta name="viewport" content="width=device-width, initial-scale=1.0">
+              <title>Krusty Krab Pizza - Order Menu</title>
+              <style>
+                body {
+                  background: #0b6ea8;
+                  color: #2b1d0e;
+                  font-family: "Trebuchet MS", Arial, sans-serif;
+                  margin: 0;
+                  padding: 0;
+                }
+                header {
+                  background: #e3262e;
+                  color: #fff;
+                  text-align: center;
+                  padding: 25px 10px;
+                  border-bottom: 6px solid #ffd21f;
+                }
+                header h1 {
+                  margin: 0;
+                  font-size: 2.6em;
+                  text-shadow: 3px 3px 0 #7a0f14;
+                  letter-spacing: 2px;
+                }
+                header p {
+                  margin: 6px 0 0;
+                  font-style: italic;
+                  color: #ffd21f;
+                }
+                .menu {
+                  max-width: 900px;
+                  margin: 30px auto;
+                  background: #fff8e1;
+                  border: 6px solid #ffd21f;
+                  border-radius: 14px;
+                  padding: 25px 35px;
+                  box-shadow: 0 10px 25px rgba(0,0,0,0.35);
+                }
+                h2 {
+                  color: #e3262e;
+                  border-bottom: 3px dashed #ffd21f;
+                  padding-bottom: 6px;
+                }
+                table {
+                  width: 100%;
+                  border-collapse: collapse;
+                  margin-bottom: 25px;
+                }
+                th, td {
+                  text-align: left;
+                  padding: 10px 8px;
+                  border-bottom: 1px solid #e0d3a8;
+                }
+                th {
+                  background: #0b6ea8;
+                  color: #fff;
+                  font-size: 0.95em;
+                  text-transform: uppercase;
+                  letter-spacing: 1px;
+                }
+                td.price {
+                  text-align: right;
+                  font-weight: bold;
+                  color: #e3262e;
+                  white-space: nowrap;
+                }
+                .badge {
+                  background: #ffd21f;
+                  color: #7a0f14;
+                  font-size: 0.7em;
+                  padding: 2px 6px;
+                  border-radius: 8px;
+                  margin-left: 6px;
+                  vertical-align: middle;
+                }
+                footer {
+                  text-align: center;
+                  color: #ffd21f;
+                  font-size: 0.85em;
+                  padding: 20px;
+                }
+                .order-box {
+                  background: #0b6ea8;
+                  color: #fff;
+                  padding: 15px 20px;
+                  border-radius: 10px;
+                  text-align: center;
+                  font-size: 1.1em;
+                }
+                .order-box strong { color: #ffd21f; }
+              </style>
+            </head>
             <body>
-              <h1>Burgers</h1>
-              <p>- Kelp Fries </p>
-              <p>- Krabby Patty </p>
+              <header>
+                <h1>Krusty Krab Pizza</h1>
+                <p>Is the pizza... for you and me!</p>
+              </header>
+
+              <div class="menu">
+                <h2>Pizzas</h2>
+                <table>
+                  <tr><th>Item</th><th>Description</th><th>Price</th></tr>
+                  <tr>
+                    <td>Krabby Patty Pizza</td>
+                    <td>Signature secret-formula sauce, kelp cheese, coral pepperoni</td>
+                    <td class="price">$12.99</td>
+                  </tr>
+                  <tr>
+                    <td>Kelp Supreme</td>
+                    <td>Kelp, sea-urchin olives, barnacle bacon, goo lagoon mushrooms</td>
+                    <td class="price">$14.50</td>
+                  </tr>
+                  <tr>
+                    <td>Bikini Bottom Veggie</td>
+                    <td>Seaweed spinach, jellyfish peppers, pineapple<span class="badge">CONTROVERSIAL</span></td>
+                    <td class="price">$11.25</td>
+                  </tr>
+                  <tr>
+                    <td>Chum Bucket "Special"</td>
+                    <td>Plankton's failed experiment. Order at your own risk.</td>
+                    <td class="price">$0.99</td>
+                  </tr>
+                </table>
+
+                <h2>Sides</h2>
+                <table>
+                  <tr><th>Item</th><th>Description</th><th>Price</th></tr>
+                  <tr><td>Kelp Fries</td><td>Crispy, salty, straight from the fryer</td><td class="price">$3.50</td></tr>
+                  <tr><td>Coral Rings</td><td>Golden fried, served with secret sauce</td><td class="price">$4.00</td></tr>
+                  <tr><td>Krabby Patty (classic)</td><td>The one and only</td><td class="price">$5.99</td></tr>
+                </table>
+
+                <h2>Drinks</h2>
+                <table>
+                  <tr><th>Item</th><th>Description</th><th>Price</th></tr>
+                  <tr><td>Kelp Shake</td><td>Green, thick, surprisingly good</td><td class="price">$4.25</td></tr>
+                  <tr><td>Goo Lagoon Soda</td><td>Bubbly and blue</td><td class="price">$2.75</td></tr>
+                  <tr><td>Salty Spitoon Water</td><td>For the tough customers</td><td class="price">$1.50</td></tr>
+                </table>
+
+                <div class="order-box">
+                  <strong>To order:</strong> Call 555-KRAB or yell "Krusty Krab Pizza!" at the top of your lungs.
+                </div>
+              </div>
+
+              <footer>
+                &copy; Krusty Krab &mdash; Bikini Bottom, Pacific Ocean<br>
+                "We serve food, not chum."
+              </footer>
             </body>
           </html>
         dest: "{{ web_root }}//index.html"
-
-# Creating Grey Team Accounts
-    - name: Create Grey Team Accounts
-      ansible.windows.win_user:
-      name: "{{ item }}"
-
 
 # Self Signing Cert
     - name: Self-signed cert for HTTPS
