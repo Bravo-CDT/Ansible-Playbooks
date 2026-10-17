@@ -178,4 +178,4 @@
 
   become: true
   become_method: runas
-  become_user: "{{ domain_admin }}
+  become_user: "{{ domain_admin }}"
