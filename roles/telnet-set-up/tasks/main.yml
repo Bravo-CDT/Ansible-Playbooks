@@ -50,12 +50,13 @@
             -Direction Inbound `
             -Protocol TCP `
             -LocalPort 23 `
-            -RemoteAddress "10.111.2.0/24" `
+            -RemoteAddress Any `
             -Action Allow
       }
 
 - name: Start and enable Telnet service
   ansible.windows.win_service:
     name: inetd
+    username: LocalSystem
     start_mode: auto
     state: started
