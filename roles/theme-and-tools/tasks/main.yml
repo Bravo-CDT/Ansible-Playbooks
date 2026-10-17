@@ -42,10 +42,8 @@
   win_copy:
     src: "ChromeSetup.exe"
     dest: 'C:\Windows\Temp\ChromeSetup.exe'
-  when: browser_check.stdout_lines | length == 0
 
 - name: Silently Install Chrome
   win_shell: |
     C:\Windows\Temp\ChromeSetup.exe /silent /install
-  when: browser_check.stdout_lines | length == 0
 
