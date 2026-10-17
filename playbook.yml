@@ -38,7 +38,6 @@
   vars: 
     ca_shared: &ca_shared
       CACommonName: "KRUSTY-KRAB-CA"
-      ansible_become_password: "{{ grey_team_users_password }}"
     <<: *ca_shared
     <<: *shared_vars
     ansible_user: "{{ netbios_name }}\\Administrator"
