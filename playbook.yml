@@ -1,6 +1,20 @@
 ---
 - name: Set up AD DC
-  hosts: windows_ad
+  hosts: treedome
+  vars: 
+    shared_vars: &shared_vars
+      domain_name: "KRUSTY.KRAB"
+      local_user_password: "Password123!"
+      ansible_passsword: "Password123!"
+      domain_admin: "kingneptune"
+    <<: *shared_vars
+    netbios_name: KRUSTY
+    safe_mode_password: "Password123!" #Replace with a secure password
+    grey_team_users_password: "Password123!" #Replace with a secure password
+    blue_team_admins_password: "Patty321!" #Replace with a secure password
+    blue_team_users_password: "Patty321!" #Replace
+    cursor_path: "{{ playbook_dir }}/Theme-assets/cursor.cur"
+    ansible_user: Administrator
   roles:
     - dc-set-up
   tags:
@@ -9,6 +23,8 @@
 
 - name: Join Client to Domain
   hosts: windows_clients
+  vars: 
+    <<: *shared_vars
   roles:
     - join-domain
   tags:
@@ -17,6 +33,13 @@
 
 - name: Set Up CA
   hosts: orderwindow
+  vars: 
+    ca_shared: &ca_shared
+      CACommonName: "KRUSTY-KRAB-CA"
+      ansible_become_password: "Password123!"
+    <<: *ca_shared
+    <<: *shared_vars
+    ansible_user: "{{ netbios_name }}\\Administrator"
   roles:
     - ca-set-up
   tags:
@@ -25,36 +48,56 @@
 
 - name: Telnet service
   hosts: kelpdelivery
-  tasks:
-    roles:
-      - telnet-service
-    tags:
-      - telnet
-      - full-deploy
+  vars:
+    <<: *shared_vars
+    ansible_user: "{{ netbios_name }}\\Administrator"
+  roles:
+    - telnet-set-up
+  tags:
+    - telnet
+    - full-deploy
 
-- name: FTP
-  hosts: goldenspatula
-  tasks:
-    roles:
-      - ftp-service
-    tags:
-      - ftp
-      - full-deploy
+# - name: FTP
+#   hosts: goldenspatula
+#   vars:
+#     <<: *global_vars
+#     ansible_user: "{{ netbios_name }}\\Administrator"
+#   tasks:
+#     roles:
+#       - ftp-service
+#     tags:
+#       - ftp
+#       - full-deploy
 
 - name: IIS
   hosts: bubblechat
-  tasks:
-    roles:
-      - iis-service
-    tags:
-      - iis
-      - full-deploy
-  
+  vars:
+    <<: *shared_vars
+    <<: *ca_shared
+    ansible_user: "{{ netbios_name }}\\Administrator"
+    web_root: "C:/inetpub/wwwroot"
+    wallpaper_photos:
+        - files/wallpapers/photo1.jpg
+        - files/wallpapers/photo2.jpg
+    # Placing the photos in a directory on the Windows Machine
+    wallpaper_dest_dir: "C:/Windows/Web/Wallpaper/Competition"
+  roles:
+    - iis-set-up
+  tags:
+    - iis
+    - full-deploy
+
 - name: Openfire
   hosts: treedome
-  tasks:
-    roles:
-      - openfire-service
-    tags:
-      - openfire
-      - full-deploy
+  vars:
+    <<: *shared_vars
+    ansible_user: "{{ netbios_name }}\\Administrator"
+    java_url: "https://api.adoptium.net/v3/installer/latest/17/ga/windows/x64/jre/hotspot/normal/eclipse?project=jdk" # URL used to download and install Java
+    # URL used to download and install the Openfire Windows installer
+    openfire_url: "https://download.igniterealtime.org/openfire/openfire_5_1_2_x64.exe"
+    openfire_path: 'C:\Program Files\Openfire'
+  roles:
+    - openfire-set-up
+  tags:
+    - openfire
+    - full-deploy

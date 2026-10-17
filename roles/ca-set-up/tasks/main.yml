@@ -27,7 +27,33 @@
       -Force
   become: true
   become_method: runas
-  become_user: " {{ domain_admin }}"
+  become_user: "{{ domain_admin }}"
+
+- name: Ensure CA service is running
+  ansible.windows.win_service:
+    name: CertSvc
+    start_mode: auto
+    state: started
+
+- name: Publish Web Server certificate template
+  ansible.windows.win_powershell:
+    error_action: stop
+    script: |
+      Import-Module ADCSAdministration
+
+      $Template = Get-CATemplate |
+          Where-Object { $_.Name -eq 'WebServer' }
+
+      if (-not $Template) {
+          Add-CATemplate -Name 'WebServer'
+          $Ansible.Changed = $true
+      }
+      else {
+          $Ansible.Changed = $false
+      }
+  become: true
+  become_method: runas
+  become_user: "{{ domain_admin }}"
 
     # Find the newest CA certificate for export
     # - name: Get the thumbprint of the newest installed CA certificate

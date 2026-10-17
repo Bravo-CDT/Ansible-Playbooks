@@ -1,3 +1,0 @@
-CACommonName: "KRUSTY-KRAB-CA"
-domain_user: 'KRUSTY\Administrator'
-ansible_become_password: "Password123!"

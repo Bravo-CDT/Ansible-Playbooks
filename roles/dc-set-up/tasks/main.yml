@@ -153,7 +153,7 @@
 - name: Copy cursor to NETLOGON
   ansible.windows.win_copy:
     src: "{{ cursor_path }}"
-    dest: '{{ netlogon_share.stdout | trim }}\Theme-assets\cursor.cur'
+    dest: "{{ netlogon_share.stdout | trim }}\\Theme-assets\\cursor.cur"
 
 # Configure Group Policy
 - name: Create and configure domain theme GPO
@@ -163,41 +163,31 @@
 
     $GPOName = "Domain Theme Policy"
     $Domain = "{{ domain_name }}"
-    $DomainDN = (($Domain -split '\.') |
-        ForEach-Object { "DC=$_" }) -join ','
+    $DomainDN = (($Domain -split '\.') | ForEach-Object { "DC=$_" }) -join ','
 
-    # Wallpaper path is identical on every PC
-    # Each PC contains a different wallpaper image
     $WallpaperPath = 'C:\ProgramData\SpongeBobTheme\wallpaper.jpg'
-
-    # Cursor is shared across the domain
     $CursorUNC = "\\$Domain\NETLOGON\Theme-assets\cursor.cur"
 
-    # Create GPO if it doesn't exist
     if (-not (Get-GPO -Name $GPOName -ErrorAction SilentlyContinue)) {
         New-GPO -Name $GPOName | Out-Null
     }
 
-    # Configure wallpaper
     Set-GPRegistryValue -Name $GPOName `
         -Key 'HKCU\Software\Microsoft\Windows\CurrentVersion\Policies\System' `
         -ValueName 'Wallpaper' `
         -Type String -Value $WallpaperPath | Out-Null
 
-    # WallpaperStyle 10 = Fill
     Set-GPRegistryValue -Name $GPOName `
         -Key 'HKCU\Software\Microsoft\Windows\CurrentVersion\Policies\System' `
         -ValueName 'WallpaperStyle' `
         -Type String -Value '10' | Out-Null
 
-    # Configure normal mouse cursor
     Set-GPPrefRegistryValue -Name $GPOName `
         -Context User -Action Update `
         -Key 'HKCU\Control Panel\Cursors' `
         -ValueName 'Arrow' `
         -Type String -Value $CursorUNC | Out-Null
 
-    # Link GPO to domain if not already linked
     $Link = (Get-GPInheritance -Target $DomainDN).GpoLinks |
         Where-Object { $_.DisplayName -eq $GPOName }
 
@@ -205,6 +195,5 @@
         New-GPLink -Name $GPOName -Target $DomainDN | Out-Null
     }
 
-    # Enforce GPO link
     Set-GPLink -Name $GPOName -Target $DomainDN `
         -Enforced Yes | Out-Null

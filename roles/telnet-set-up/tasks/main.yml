@@ -11,5 +11,5 @@
 - name: Run Telnet server
   ansible.windows.win_shell: Start-Service telnet
 
-- name: Install Telnet clarinet
+- name: Install Telnet client
   ansible.windows.win_shell: Install-WindowsFeature -Name Telnet-Client
