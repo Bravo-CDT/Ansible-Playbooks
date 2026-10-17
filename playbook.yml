@@ -14,8 +14,17 @@
   hosts: windows
   gather_facts: false
   vars:
-    ansible_user: Administrator
-    ansible_password: "IWant2Sleep!" 
+    shared_vars: &shared_vars
+      netbios_name: KRUSTY
+      domain_name: "KRUSTY.KRAB"
+      domain_admin: "{{ netbios_name }}\\kingneptune" # grey team admin
+      local_user_password: "PineappleRush82!" # Used for Grey Team Local Admin
+      blue_team_admins_password: "Patty321!" #Replace with a secure password
+      ansible_password: "IWant2Sleep!" # Built in administator
+      grey_team_users_password: "Pizza4Breakfast!" #Replace with a secure password
+      ansible_become_password: "{{ grey_team_users_password }}"
+    <<: *shared_vars
+    ansible_user: Administrator 
   roles:
     - theme-and-tools
   tags:
@@ -26,15 +35,6 @@
   hosts: treedome
   gather_facts: false
   vars: 
-    shared_vars: &shared_vars
-      netbios_name: KRUSTY
-      domain_name: "KRUSTY.KRAB"
-      domain_admin: "{{ netbios_name }}\\kingneptune" # grey team admin
-      local_user_password: "PineappleRush82!" # Used for Grey Team Local Admin
-      blue_team_admins_password: "Patty321!" #Replace with a secure password
-      ansible_password: "IWant2Sleep!" # Built in administator
-      grey_team_users_password: "Pizza4Breakfast!" #Replace with a secure password
-      ansible_become_password: "{{ grey_team_users_password }}"
     <<: *shared_vars
     safe_mode_password: "Coffee@Midnight8" #Replace with a secure password
     blue_team_users_password: "Patty321!" #Replace
