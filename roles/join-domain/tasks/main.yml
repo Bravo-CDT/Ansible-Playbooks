@@ -50,6 +50,6 @@
   microsoft.ad.membership:
     dns_domain_name: "{{ domain_name }}"
     domain_admin_user: "{{ domain_admin }}@{{ domain_name }}"
-    domain_admin_password: "{{ domain_admin_password }}"
+    domain_admin_password: "{{ grey_team_users_password }}"
     state: domain
     reboot: true
