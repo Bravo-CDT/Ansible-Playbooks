@@ -1,0 +1,15 @@
+- name: Install Telnet Server
+  ansible.windows.win_shell: Install-WindowsFeature -Name Telnet-Server
+
+- name: Verify Telnet installation
+  ansible.windows.win_command: where.exe telnet
+  changed_when: false
+
+- name: Allow Telnet in Firewall
+  ansible.windows.win_shell: Enable-NetFirewallRule -DisplayGroup "Telnet Server"
+
+- name: Run Telnet server
+  ansible.windows.win_shell: Start-Service telnet
+
+- name: Install Telnet clarinet
+  ansible.windows.win_shell: Install-WindowsFeature -Name Telnet-Client
