@@ -63,13 +63,37 @@
 
 # Export the root CA certificate to a temporary location on the Windows Server
 - name: Export root CA certificate
-  ansible.windows.win_certificate_store:
-    path: C:\Windows\Temp\RootCA.pem # Location where the root CA certificate will be exported, can be changed to any other location
-    state: exported
-    file_type: pem # this can be changed to der or pfx
-    store_location: LocalMachine
-    store_name: Root
-    thumbprint: "{{ ca_thumbprint.stdout_lines[0] }}"
+  ansible.windows.win_powershell:
+    error_action: stop
+    script: |
+      $Thumbprint = "{{ ca_thumbprint.stdout_lines[0] | trim }}"
+
+      $Cert = Get-ChildItem Cert:\LocalMachine\Root |
+        Where-Object { $_.Thumbprint -eq $Thumbprint } |
+        Select-Object -First 1
+
+      if (-not $Cert) {
+          throw "Root CA certificate not found: $Thumbprint"
+      }
+
+      $Path = 'C:\Windows\Temp\RootCA.pem'
+
+      $Base64 = [Convert]::ToBase64String(
+          $Cert.RawData,
+          [Base64FormattingOptions]::InsertLineBreaks
+      )
+
+      $PEM = "-----BEGIN CERTIFICATE-----`r`n$Base64`r`n-----END CERTIFICATE-----`r`n"
+
+      if (-not (Test-Path $Path) -or
+          [IO.File]::ReadAllText($Path) -ne $PEM) {
+
+          [IO.File]::WriteAllText($Path, $PEM)
+          $Ansible.Changed = $true
+      }
+      else {
+          $Ansible.Changed = $false
+      }
 
 # Fetch the exported root CA certificate to the Ansible controller for the further distribution to client machines
 - name: Copy Root CA to Ansible Controller
