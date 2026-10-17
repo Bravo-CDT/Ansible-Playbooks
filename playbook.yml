@@ -1,4 +1,15 @@
 ---
+- name: Install theme assets and tools
+  hosts: windows
+  vars:
+    ansible_user: Administrator
+    ansible_password: "IWant2Sleep!" 
+  roles:
+    - theme-and-tools
+  tags:
+    - theme
+    - full-deploy
+
 - name: Set up AD DC
   hosts: treedome
   vars: 
@@ -27,6 +38,7 @@
   vars: 
     <<: *shared_vars
     ansible_user: Administrator
+    dc_ip: 10.111.2.1
   roles:
     - join-domain
   tags:

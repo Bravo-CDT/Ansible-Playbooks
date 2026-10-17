@@ -1,4 +1,9 @@
 ---
+- name: Install Windows Telnet Client
+  ansible.windows.win_feature:
+    name: Tenet-Client
+    state: present
+
 - name: Download Cygwin installer
   ansible.windows.win_get_url:
     url: https://cygwin.com/setup-x86_64.exe
