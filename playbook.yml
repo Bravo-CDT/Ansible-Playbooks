@@ -46,6 +46,18 @@
     - ca
     - full-deploy
 
+- name: Distribute CA ROOT cert with linux
+  hosts: linux
+  vars:
+    path_to_root_cert: "{{ playbook_dir }}./RootCA.pem"
+    become: true
+  roles:
+    - share-ca-cert
+  tags:
+    - ca-set-up
+    - share-root-cert
+    - full-deploy
+
 - name: Telnet service
   hosts: kelpdelivery
   vars:
@@ -56,18 +68,6 @@
   tags:
     - telnet
     - full-deploy
-
-# - name: FTP
-#   hosts: goldenspatula
-#   vars:
-#     <<: *global_vars
-#     ansible_user: "{{ netbios_name }}\\Administrator"
-#   tasks:
-#     roles:
-#       - ftp-service
-#     tags:
-#       - ftp
-#       - full-deploy
 
 - name: IIS
   hosts: bubblechat
