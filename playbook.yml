@@ -5,7 +5,7 @@
     shared_vars: &shared_vars
       netbios_name: KRUSTY
       domain_name: "KRUSTY.KRAB"
-      domain_admin: "kingneptune" # grey team admin
+      domain_admin: "{{ netbios_name }}\\kingneptune" # grey team admin
       local_user_password: "PineappleRush82!" # Used for Grey Team Local Admin
       blue_team_admins_password: "Patty321!" #Replace with a secure password
       ansible_password: "IWant2Sleep!" # Built in administator
