@@ -8,14 +8,18 @@
     arguments: 'ADDLOCAL=FeatureMain,FeatureEnvironment,FeatureJavaHome INSTALLDIR="C:\Program Files\Temurin"'
 
 # Download and install Openfire directly from the installer URL
+- name: Download Openfire installer
+  ansible.windows.win_get_url:
+    url: "{{ openfire_url }}"
+    dest: 'C:\Windows\Temp\openfire-installer.exe'
+    follow_redirects: all
+
 - name: Install Openfire
   ansible.windows.win_package:
-    path: "{{ openfire_url }}"
-    arguments: "-q"
+    path: 'C:\Windows\Temp\openfire-installer.exe'
+    arguments: '-q'
     state: present
-    # If this file already exists, Ansible considers Openfire installed and will not reinstall it.
-    creates_path: "{{ openfire_path }}\\bin\\openfire-service.exe"
-    # Waits for any child installer processes to finish before continuing.
+    creates_path: '{{ openfire_path }}\bin\openfire-service.exe'
     wait_for_children: true
 
 # Start the Openfire service and configure it to start whenever Windows boots.
