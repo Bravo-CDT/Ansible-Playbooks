@@ -43,7 +43,7 @@
   ansible.windows.win_dns_client:
     adapter_names: '*'
     dns_servers:
-      - 192.168.1.10
+      - 10.111.2.1
 
 # Join Domain
 - name: Join Windows Machines to Domain
