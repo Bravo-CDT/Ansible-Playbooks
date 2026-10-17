@@ -1,6 +1,18 @@
 ---
+- name: "WIN - Minimal Facts"
+  hosts: windows
+  gather_facts: false
+
+  tasks:
+    - name: Gather minimal Windows facts
+      setup:
+        filter:
+          - ansible_hostname
+          - ansible_os_family
+
 - name: Install theme assets and tools
   hosts: windows
+  gather_facts: false
   vars:
     ansible_user: Administrator
     ansible_password: "IWant2Sleep!" 
@@ -12,6 +24,7 @@
 
 - name: Set up AD DC
   hosts: treedome
+  gather_facts: false
   vars: 
     shared_vars: &shared_vars
       netbios_name: KRUSTY
@@ -35,6 +48,7 @@
 
 - name: Join Client to Domain
   hosts: windows_clients
+  gather_facts: false
   vars: 
     <<: *shared_vars
     ansible_user: Administrator
@@ -47,6 +61,7 @@
 
 - name: Set Up CA
   hosts: goldenspatula
+  gather_facts: false
   vars: 
     ca_shared: &ca_shared
       CACommonName: "KRUSTY-KRAB-CA"
@@ -74,6 +89,7 @@
 
 - name: Telnet service
   hosts: kelpdelivery
+  gather_facts: false
   vars:
     <<: *shared_vars
     ansible_user: "{{ netbios_name }}\\Administrator"
@@ -85,6 +101,7 @@
 
 - name: IIS
   hosts: orderwindow
+  gather_facts: false
   vars:
     <<: *shared_vars
     <<: *ca_shared
@@ -99,6 +116,7 @@
 
 - name: Openfire
   hosts: bubblechat
+  gather_facts: false
   vars:
     <<: *shared_vars
     ansible_user: "{{ netbios_name }}\\Administrator"
