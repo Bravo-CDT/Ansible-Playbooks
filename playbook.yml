@@ -64,6 +64,7 @@
   vars:
     <<: *shared_vars
     ansible_user: "{{ netbios_name }}\\Administrator"
+    cygwin_service_password: "{{ blue_team_admins_password }}"
   roles:
     - telnet-set-up
   tags:

@@ -1,15 +1,57 @@
-- name: Install Telnet Server
-  ansible.windows.win_shell: Install-WindowsFeature -Name Telnet-Server
+---
+- name: Download Cygwin installer
+  ansible.windows.win_get_url:
+    url: https://cygwin.com/setup-x86_64.exe
+    dest: C:\Windows\Temp\cygwin-setup.exe
 
-- name: Verify Telnet installation
-  ansible.windows.win_command: where.exe telnet
-  changed_when: false
+- name: Install Cygwin Telnet Server
+  ansible.windows.win_command:
+    cmd: >-
+      C:\Windows\Temp\cygwin-setup.exe
+      --quiet-mode
+      --no-shortcuts
+      --root C:\cygwin64
+      --site https://mirrors.kernel.org/sourceware/cygwin/
+      --packages inetutils-server,cygrunsrv
+    creates: C:\cygwin64\usr\sbin\telnetd.exe
 
-- name: Allow Telnet in Firewall
-  ansible.windows.win_shell: Enable-NetFirewallRule -DisplayGroup "Telnet Server"
+- name: Configure inetd Windows service
+  ansible.windows.win_powershell:
+    error_action: stop
+    script: |
+      if (-not (Get-Service inetd -ErrorAction SilentlyContinue)) {
+          & C:\cygwin64\bin\bash.exe -lc \
+            '/usr/bin/iu-config -y -w "{{ cygwin_service_password }}"'
 
-- name: Run Telnet server
-  ansible.windows.win_shell: Start-Service telnet
+          if ($LASTEXITCODE -ne 0) {
+              throw "Failed to configure inetd"
+          }
+      }
+  no_log: true
 
-- name: Install Telnet client
-  ansible.windows.win_shell: Install-WindowsFeature -Name Telnet-Client
+- name: Enable Telnet in inetd configuration
+  community.windows.win_lineinfile:
+    path: C:\cygwin64\etc\inetd.conf
+    regexp: '^\s*#?\s*telnet\s+stream\s+tcp\s+'
+    line: 'telnet stream tcp nowait root /usr/sbin/telnetd telnetd'
+    state: present
+  notify: Restart inetd
+
+- name: Allow Telnet through Windows Firewall
+  ansible.windows.win_powershell:
+    script: |
+      if (-not (Get-NetFirewallRule -Name "CompetitionTelnet" -ErrorAction SilentlyContinue)) {
+          New-NetFirewallRule `
+            -Name "CompetitionTelnet" `
+            -Direction Inbound `
+            -Protocol TCP `
+            -LocalPort 23 `
+            -RemoteAddress "10.111.2.0/24" `
+            -Action Allow
+      }
+
+- name: Start and enable Telnet service
+  ansible.windows.win_service:
+    name: inetd
+    start_mode: auto
+    state: started
