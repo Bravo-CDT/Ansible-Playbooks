@@ -1,8 +1,9 @@
 # Join all windows boxes to a domain
 ---
-- name: Create Local Users
+# local Account for greyteam
+- name: Create Local Users For Grey Team
   ansible.windows.win_user:
-    name: grey
+    name: greyteam
     password: "{{ local_user_password }}"
     state: present
 
@@ -10,9 +11,24 @@
   ansible.windows.win_group_membership:
     name: Administrators
     members:
-      - '.\grey'
+      - '.\greyteam'
     state: present
 
+# local account for blue team
+- name: Create Local Users for Blue Team
+  ansible.windows.win_user:
+    name: jellyfish
+    password: "{{ blue_team_admins_password }}"
+    state: present
+
+- name: Add local user to Administrators
+  ansible.windows.win_group_membership:
+    name: Administrators
+    members:
+      - '.\jellyfish'
+    state: present
+
+# Wallpaper set up
 - name: Create wallpaper directory
   ansible.windows.win_file:
     path: 'C:\ProgramData\SpongeBobTheme'
@@ -29,6 +45,7 @@
     dns_servers:
       - 192.168.1.10
 
+# Join Domain
 - name: Join Windows Machines to Domain
   microsoft.ad.membership:
     dns_domain_name: "{{ domain_name }}"

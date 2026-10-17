@@ -4,14 +4,14 @@
   vars: 
     shared_vars: &shared_vars
       domain_name: "KRUSTY.KRAB"
-      local_user_password: "Password123!"
+      local_user_password: "Password123!" # Used for Grey Team
+      blue_team_admins_password: "Patty321!" #Replace with a secure password
       ansible_passsword: "Password123!"
       domain_admin: "kingneptune"
     <<: *shared_vars
     netbios_name: KRUSTY
     safe_mode_password: "Password123!" #Replace with a secure password
     grey_team_users_password: "Password123!" #Replace with a secure password
-    blue_team_admins_password: "Patty321!" #Replace with a secure password
     blue_team_users_password: "Patty321!" #Replace
     cursor_path: "{{ playbook_dir }}/Theme-assets/cursor.cur"
     ansible_user: Administrator
