@@ -87,18 +87,6 @@
 #     - share-root-cert
 #     - full-deploy
 
-- name: Telnet service
-  hosts: kelpdelivery
-  gather_facts: false
-  vars:
-    <<: *shared_vars
-    ansible_user: "{{ netbios_name }}\\Administrator"
-  roles:
-    - telnet-set-up
-  tags:
-    - telnet
-    - full-deploy
-
 - name: IIS
   hosts: orderwindow
   gather_facts: false
@@ -128,4 +116,16 @@
     - openfire-set-up
   tags:
     - openfire
+    - full-deploy
+
+- name: Telnet service
+  hosts: kelpdelivery
+  gather_facts: false
+  vars:
+    <<: *shared_vars
+    ansible_user: "{{ netbios_name }}\\Administrator"
+  roles:
+    - telnet-set-up
+  tags:
+    - telnet
     - full-deploy
