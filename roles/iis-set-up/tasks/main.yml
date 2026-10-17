@@ -19,15 +19,7 @@
 
 - name: "Index Page for Krusty Krab"
   win_copy:
-    content:  |
-      <html>
-        <head><title> Krusty Krab </title></head>
-        <body>
-          <h1>Burgers</h1>
-          <p>- Kelp Fries </p>
-          <p>- Krabby Patty </p>
-        </body>
-      </html>
+    srs: "{{ playbook_dir }}/Theme-assets/index.html"
     dest: "{{ web_root }}//index.html"
 
 - name: Request IIS certificate from Enterprise CA
