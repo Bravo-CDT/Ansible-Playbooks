@@ -102,21 +102,3 @@
     src: C:\Windows\Temp\RootCA.pem 
     dest: "{{ playbook_dir }}/RootCA.pem" # Location on the Ansible controller where the root CA certificate will be stored, can be changed to any other location
     flat: true
-
-
-- name: Allow ORDERWINDOW to request WebServer certificates
-  ansible.windows.win_powershell:
-    error_action: stop
-    script: |
-      $ConfigDN = ([ADSI]"LDAP://RootDSE").configurationNamingContext
-      $Template = "CN=WebServer,CN=Certificate Templates,CN=Public Key Services,CN=Services,$ConfigDN"
-
-      & dsacls.exe $Template /G 'KRUSTY\ORDERWINDOW$:GR'
-      if ($LASTEXITCODE -ne 0) { throw "Failed to grant Read" }
-
-      & dsacls.exe $Template /G 'KRUSTY\ORDERWINDOW$:CA;Enroll'
-      if ($LASTEXITCODE -ne 0) { throw "Failed to grant Enroll" }
-
-  become: true
-  become_method: runas
-  become_user: "{{ domain_admin }}"

@@ -157,6 +157,23 @@
     - { identity: "mermaidman", firstname: "Mermaid", surname: "Man", password: "{{ blue_team_users_password }}", description: "Retired underwater superhero. Defends Bikini Bottom from villains alongside Barnacle Boy." }
     - { identity: "barnacleboy", firstname: "Barnacle", surname: "Boy", password: "{{ blue_team_users_password }}", description: "Mermaid Man's longtime superhero sidekick. Fights underwater crime while seeking greater recognition." }
 
+- name: Allow ORDERWINDOW to request WebServer certificates
+  ansible.windows.win_powershell:
+    error_action: stop
+    script: |
+      $ConfigDN = ([ADSI]"LDAP://RootDSE").configurationNamingContext
+      $Template = "CN=WebServer,CN=Certificate Templates,CN=Public Key Services,CN=Services,$ConfigDN"
+
+      & dsacls.exe $Template /G 'KRUSTY\ORDERWINDOW$:GR'
+      if ($LASTEXITCODE -ne 0) { throw "Failed to grant Read" }
+
+      & dsacls.exe $Template /G 'KRUSTY\ORDERWINDOW$:CA;Enroll'
+      if ($LASTEXITCODE -ne 0) { throw "Failed to grant Enroll" }
+
+  become: true
+  become_method: runas
+  become_user: "{{ domain_admin }}"
+
 # Group Policy 
 - name: Ensure GroupPolicy module is available
   ansible.windows.win_feature:
