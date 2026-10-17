@@ -48,12 +48,3 @@
   ansible.windows.win_service:
     name: Openfire
     state: restarted
-
-# FEATURE 3 - OPENFIRE AVAILABILITY CHECK
-# Wait for the Openfire web setup/admin interface to become available and uses Port 9090 for the web interface.
-- name: Verify Openfire is responding on port 9090
-  ansible.windows.win_wait_for:
-    host: 127.0.0.1
-    port: 9090
-    state: started
-    timeout: 120
