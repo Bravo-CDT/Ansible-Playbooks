@@ -19,7 +19,7 @@
 
 - name: "Index Page for Krusty Krab"
   win_copy:
-    srs: "{{ playbook_dir }}/Theme-assets/index.html"
+    src: "{{ playbook_dir }}/Theme-assets/index.html"
     dest: "{{ web_root }}/index.html"
 
 - name: Request IIS certificate from Enterprise CA
