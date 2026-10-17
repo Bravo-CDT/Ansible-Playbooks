@@ -4,14 +4,14 @@
   vars: 
     shared_vars: &shared_vars
       domain_name: "KRUSTY.KRAB"
-      local_user_password: "Password123!" # Used for Grey Team
+      domain_admin: "kingneptune" # grey team admin
+      local_user_password: "PineappleRush82!" # Used for Grey Team Local Admin
       blue_team_admins_password: "Patty321!" #Replace with a secure password
-      ansible_passsword: "Password123!"
-      domain_admin: "kingneptune"
+      ansible_password: "IWant2Sleep!" # Built in administator
+      grey_team_users_password: "Pizza4Breakfast!" #Replace with a secure password
     <<: *shared_vars
     netbios_name: KRUSTY
-    safe_mode_password: "Password123!" #Replace with a secure password
-    grey_team_users_password: "Password123!" #Replace with a secure password
+    safe_mode_password: "Coffee@Midnight8" #Replace with a secure password
     blue_team_users_password: "Patty321!" #Replace
     cursor_path: "{{ playbook_dir }}/Theme-assets/cursor.cur"
     ansible_user: Administrator
@@ -36,7 +36,7 @@
   vars: 
     ca_shared: &ca_shared
       CACommonName: "KRUSTY-KRAB-CA"
-      ansible_become_password: "Password123!"
+      ansible_become_password: "{{ grey_team_users_password }}"
     <<: *ca_shared
     <<: *shared_vars
     ansible_user: "{{ netbios_name }}\\Administrator"
@@ -46,17 +46,17 @@
     - ca
     - full-deploy
 
-- name: Distribute CA ROOT cert with linux
-  hosts: linux
-  vars:
-    path_to_root_cert: "{{ playbook_dir }}./RootCA.pem"
-    become: true
-  roles:
-    - share-ca-cert
-  tags:
-    - ca-set-up
-    - share-root-cert
-    - full-deploy
+# - name: Distribute CA ROOT cert with linux
+#   hosts: linux
+#   vars:
+#     path_to_root_cert: "{{ playbook_dir }}./RootCA.pem"
+#     become: true
+#   roles:
+#     - share-ca-cert
+#   tags:
+#     - ca-set-up
+#     - share-root-cert
+#     - full-deploy
 
 - name: Telnet service
   hosts: kelpdelivery
