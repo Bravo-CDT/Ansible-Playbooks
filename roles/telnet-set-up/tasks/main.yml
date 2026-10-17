@@ -20,6 +20,12 @@
       --packages inetutils-server,cygrunsrv
     creates: C:\cygwin64\usr\sbin\telnetd.exe
 
+- name: Generate Cygwin passwd and group files for local and domain users
+  ansible.windows.win_powershell:
+    script: |
+      & C:\cygwin64\bin\bash.exe -lc 'mkpasswd -l > /etc/passwd && mkpasswd -d >> /etc/passwd 2>/dev/null || true'
+      & C:\cygwin64\bin\bash.exe -lc 'mkgroup -l > /etc/group && mkgroup -d >> /etc/group 2>/dev/null || true'
+
 - name: Configure inetd Windows service
   ansible.windows.win_powershell:
     error_action: stop
