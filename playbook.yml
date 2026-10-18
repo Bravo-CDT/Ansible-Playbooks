@@ -56,8 +56,8 @@
 
 - name: Set up SMTP
   hosts: bottlemail
+  become: true
   vars:
-    become: true
     ad_server: "treedome.krusty.krab"
     ad_search_base: "DC=krusty,DC=krab"
     ad_bind_user: "mrkrabs@krusty.krab"
