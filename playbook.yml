@@ -89,3 +89,14 @@
   tags:
     - apache
     - full-deploy
+
+# not Implemented right now we have docker ansible I assume it was created for nginx
+- name: Set Up Nginx
+  hosts: krustyfront
+  vars:
+    
+  roles:
+    - nginx-set-up
+  tags:
+    - nginx
+    - full-deploy
