@@ -1,12 +1,11 @@
 
----    
+---
 - name: Install SMTP and authentication packages
   ansible.builtin.apt:
     name:
       - postfix
       - sasl2-bin
       - libsasl2-modules
-      - openssl
     state: present
     update_cache: true
 
@@ -52,34 +51,6 @@
     groups: sasl
     append: true
 
-- name: Generate lab SMTP TLS certificate
-  ansible.builtin.command:
-    argv:
-      - openssl
-      - req
-      - -x509
-      - -newkey
-      - rsa:2048
-      - -nodes
-      - -keyout
-      - /etc/ssl/private/bottlemail.key
-      - -out
-      - /etc/ssl/certs/bottlemail.crt
-      - -days
-      - "365"
-      - -subj
-      - "/CN={{ smtp_hostname }}"
-      - -addext
-      - "subjectAltName=DNS:{{ smtp_hostname }}"
-    creates: /etc/ssl/certs/bottlemail.crt
-
-- name: Protect SMTP TLS private key
-  ansible.builtin.file:
-    path: /etc/ssl/private/bottlemail.key
-    owner: root
-    group: root
-    mode: "0600"
-
 - name: Configure Postfix
   ansible.builtin.command:
     argv:
@@ -92,9 +63,6 @@
     - "smtpd_sasl_type=cyrus"
     - "smtpd_sasl_auth_enable=no"
     - "smtpd_sasl_security_options=noanonymous"
-    - "smtpd_tls_cert_file=/etc/ssl/certs/bottlemail.crt"
-    - "smtpd_tls_key_file=/etc/ssl/private/bottlemail.key"
-    - "smtpd_tls_security_level=may"
     - "smtpd_relay_restrictions=permit_mynetworks,permit_sasl_authenticated,reject_unauth_destination"
 
 - name: Enable SMTP submission port 587
@@ -104,7 +72,7 @@
       - -M
       - "submission/inet=submission inet n - n - - smtpd"
 
-- name: Require authentication and TLS on port 587
+- name: Enable SMTP authentication on port 587
   ansible.builtin.command:
     argv:
       - postconf
@@ -113,8 +81,6 @@
   loop:
     - "submission/inet/syslog_name=postfix/submission"
     - "submission/inet/smtpd_sasl_auth_enable=yes"
-    - "submission/inet/smtpd_tls_security_level=encrypt"
-    - "submission/inet/smtpd_tls_auth_only=yes"
     - "submission/inet/smtpd_relay_restrictions=permit_sasl_authenticated,reject"
 
 - name: Start LDAP authentication service
@@ -122,10 +88,6 @@
     name: saslauthd
     state: restarted
     enabled: true
-
-- name: Check Postfix configuration
-  ansible.builtin.command: postfix check
-  changed_when: false
 
 - name: Restart Postfix
   ansible.builtin.service:

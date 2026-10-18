@@ -63,7 +63,7 @@
     ad_search_base: "DC=krusty,DC=krab"
     ad_bind_user: "mrkrabs@krusty.krab"
     ad_bind_password: "Patty321!"
-    smtp_hostname: "bottlemail.example.local"
+    smtp_hostname: "bottlemail.krusty.krab"
   roles:
     - smtp-set-up
   tags:
