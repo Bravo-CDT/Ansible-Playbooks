@@ -135,6 +135,16 @@
   become_method: runas
   become_user: "{{ domain_admin }}"
 
+# Set up DNS Records for Linux Enviorment
+- name: Create DNS A records for Linux machines
+  ansible.windows.win_dns_record:
+    name: "{{ hostvars[item].hostname }}"
+    type: A
+    value: "{{ item }}"
+    zone: "{{ domain_name }}"
+    state: present
+  loop: "{{ groups['linux'] }}"
+
 # Group Policy 
 - name: Ensure GroupPolicy module is available
   ansible.windows.win_feature:

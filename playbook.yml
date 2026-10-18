@@ -40,6 +40,12 @@
     blue_team_users_password: "Patty321!" #Replace
     cursor_path: "{{ playbook_dir }}/Theme-assets/cursor.cur"
     ansible_user: Administrator
+    linux_hosts:
+      - shellphone
+      - bottlemail
+      - pattyvault
+      - thesafe
+      - krustyfront
   roles:
     - dc-set-up
   tags:
