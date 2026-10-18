@@ -15,13 +15,18 @@
   gather_facts: false
   vars:
     shared_vars: &shared_vars
+    # Domain Declaration
       netbios_name: KRUSTY
       domain_name: "KRUSTY.KRAB"
       domain_admin: "{{ netbios_name }}\\kingneptune" # grey team admin
+
+      # Passwords
       local_user_password: "PineappleRush82!" # Used for Grey Team Local Admin
-      blue_team_admins_password: "Patty321!" #Replace with a secure password
-      ansible_password: "IWant2Sleep!" # Built in administator
-      grey_team_users_password: "Pizza4Breakfast!" #Replace with a secure password
+      blue_team_admins_password: "Patty321!" # Password for Blue Team Domain Admins
+      grey_team_users_password: "Pizza4Breakfast!" # Password for Grey Team Domain Admins
+
+      # Ansible user pswd and become pswd for windows
+      ansible_password: "IWant2Sleep!" # Built in administator (ansible - user
       ansible_become_password: "{{ grey_team_users_password }}"
     <<: *shared_vars
     ansible_user: Administrator 
@@ -31,15 +36,17 @@
     - theme
     - full-deploy
 
+# There is hardcoded KRUSTY\ORDERWINDOW
 - name: Set up AD DC
   hosts: treedome
   gather_facts: false
   vars: 
     <<: *shared_vars
-    safe_mode_password: "Coffee@Midnight8" #Replace with a secure password
-    blue_team_users_password: "Patty321!" #Replace
+    safe_mode_password: "Coffee@Midnight8" # Password to restore AD
+    blue_team_users_password: "Patty321!" # Password for blue team domain users
     cursor_path: "{{ playbook_dir }}/Theme-assets/cursor.cur"
     ansible_user: Administrator
+    # Hosts to add to dns records on AD DC
     linux_hosts:
       - shellphone
       - bottlemail
@@ -58,6 +65,7 @@
   vars: 
     <<: *shared_vars
     ansible_user: Administrator
+    # IP of AD DC
     dc_ip: 10.111.2.1
   roles:
     - join-domain
@@ -74,7 +82,6 @@
     <<: *ca_shared
     <<: *shared_vars
     ansible_user: "{{ netbios_name }}\\Administrator"
-    iis_computer_account: 'KRUSTY\ORDERWINDOW$'
   roles:
     - ca-set-up
   tags:
