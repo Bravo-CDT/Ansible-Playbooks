@@ -1,4 +1,16 @@
 ---
+- name: Update packages
+  hosts: linux
+  become: true
+  tasks:
+    - name: Upgrade all packages
+      ansible.builtin.apt:
+        upgrade: dist
+        update_cache: true
+  tags:
+    - update
+    - full-deploy
+
 - name: Create users
   hosts: linux
   become: true
@@ -78,7 +90,7 @@
     db_user: "{{ default_user }}"
     db_password: "{{ default_password }}"
     db_name: "KrustySafe" # Replace
-    db_allowed_source: "10.111.3.1/32" # Only host allowed to connect remotely
+    db_allowed_source: "10.111.0.0/16" # Subnet allowed to connect remotely
 
   roles:
     - postgresql-set-up
