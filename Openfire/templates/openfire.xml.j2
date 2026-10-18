@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<jive>
+  <adminConsole>
+    <port>9090</port>
+    <securePort>-1</securePort>
+  </adminConsole>
+
+  <connectionProvider>
+    <className>org.jivesoftware.database.EmbeddedConnectionProvider</className>
+  </connectionProvider>
+
+  <admin>
+    <authorizedUsernames>{{ openfire_admin_users | join(',') | e }}</authorizedUsernames>
+  </admin>
+
+  <register>
+    <inband>false</inband>
+  </register>
+
+  <httpbind>
+    <enabled>true</enabled>
+    <port>
+      <plain>7070</plain>
+    </port>
+  </httpbind>
+
+  <autosetup>
+    <run>true</run>
+    <locale>en</locale>
+    <xmpp>
+      <domain>{{ openfire_xmpp_domain | e }}</domain>
+      <fqdn>{{ openfire_hostname | e }}</fqdn>
+      <auth>
+        <anonymous>false</anonymous>
+      </auth>
+    </xmpp>
+    <database>
+      <mode>embedded</mode>
+    </database>
+    <admin>
+      <password>{{ openfire_bootstrap_admin_password | e }}</password>
+    </admin>
+    <users>
+{% for username in openfire_admin_users + openfire_standard_users %}
+      <user{{ loop.index }}>
+        <username>{{ username | e }}</username>
+        <password>{{ openfire_account_password | e }}</password>
+        <name>{{ username | e }}</name>
+      </user{{ loop.index }}>
+{% endfor %}
+    </users>
+  </autosetup>
+</jive>

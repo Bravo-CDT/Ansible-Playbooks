@@ -1,47 +1,137 @@
 ---
-# This playbook will install the Openfire chat server on a Windows machine.
-- name: Install Openfire Chat Server
-  hosts: windows
+# First-run configuration for the competition's Bubblechat server.
+- name: Install and configure Openfire
+  hosts: bubblechat
   gather_facts: false
 
   vars:
-    java_url: "https://api.adoptium.net/v3/installer/latest/17/ga/windows/x64/jre/hotspot/normal/eclipse?project=jdk" # URL used to download and install Java
-    # URL used to download and install the Openfire Windows installer
-    openfire_url: "https://download.igniterealtime.org/openfire/openfire_5_1_2_x64.exe"
+    # Keep the installer version and its published SHA-256 digest together.
+    java_url: https://api.adoptium.net/v3/installer/latest/17/ga/windows/x64/jre/hotspot/normal/eclipse?project=jdk
+    openfire_url: https://download.igniterealtime.org/openfire/openfire_5_1_2_x64.exe
+    openfire_checksum: 5e52d57fb9e20235ed31a6809c3ecd139fb6583c0b24575cab3459ad4ff0b0a1
     openfire_path: 'C:\Program Files\Openfire'
+    openfire_config_path: '{{ openfire_path }}\conf\openfire.xml'
+    # XMPP addresses use krusty.krab; bubblechat.krusty.krab is the server's DNS name.
+    openfire_xmpp_domain: krusty.krab
+    openfire_hostname: bubblechat.krusty.krab
+    openfire_host_ip: 10.111.2.4
+    # Shared initial password assigned in the competition packet.
+    openfire_account_password: 'Patty321!'
+    # Grey Team and the three designated Blue Team users can administer Openfire.
+    openfire_admin_users:
+      - kingneptune
+      - paintythepirate
+      - Mrkrabs
+      - Spongebob
+      - Squidward
+    # These Blue Team users can chat but cannot access the admin console.
+    openfire_standard_users:
+      - patrick
+      - sandy
+      - Pearl
 
   tasks:
-    # Install Java on the Windows machine using win_package
+    # The XMPP domain becomes part of every user's address after first-run setup.
+    - name: Validate the XMPP domain
+      ansible.builtin.assert:
+        that:
+          - openfire_xmpp_domain is defined
+          - openfire_xmpp_domain | default('') | trim | length > 0
+        fail_msg: >-
+          Supply the XMPP domain that scoring clients will use.
+        quiet: true
+
     - name: Install Java 17 JRE
       ansible.windows.win_package:
-        path: "{{ java_url }}"
+        path: '{{ java_url }}'
         state: present
-        # Installs Java and configures environment variables
         arguments: 'ADDLOCAL=FeatureMain,FeatureEnvironment,FeatureJavaHome INSTALLDIR="C:\Program Files\Temurin"'
 
-    # Download and install Openfire directly from the installer URL
-    - name: Install Openfire
+    - name: Install Openfire 5.1.2
       ansible.windows.win_package:
-        path: "{{ openfire_url }}"
-        arguments: "-q"
+        path: '{{ openfire_url }}'
+        checksum: '{{ openfire_checksum }}'
+        checksum_algorithm: sha256
+        arguments: '-q'
         state: present
-        # If this file already exists, Ansible considers Openfire installed and will not reinstall it.
-        creates_path: "{{ openfire_path }}\\bin\\openfire-service.exe"
-        # Waits for any child installer processes to finish before continuing.
+        creates_path: '{{ openfire_path }}\bin\openfire-service.exe'
         wait_for_children: true
 
-    # Start the Openfire service and configure it to start whenever Windows boots.
-    - name: Start Openfire service
+    # Openfire's installer starts the service. Only an unconfigured server should
+    # receive the first-run XML template; replacing it later would risk its data.
+    - name: Check whether Openfire has completed first-run setup
+      ansible.windows.win_powershell:
+        script: |
+          $configPath = '{{ openfire_config_path }}'
+          $setupComplete = $false
+          if (Test-Path -LiteralPath $configPath) {
+              [xml]$config = Get-Content -LiteralPath $configPath -Raw
+              $setupComplete = [string]$config.jive.setup -eq 'true'
+          }
+          $Ansible.Result = @{ setup_complete = $setupComplete }
+          $Ansible.Changed = $false
+      register: openfire_setup_state
+
+    - name: Stop Openfire before first-run configuration
+      ansible.windows.win_service:
+        name: Openfire
+        state: stopped
+      when: not openfire_setup_state.result.setup_complete
+
+    # Autosetup also creates Openfire's built-in admin user. The five named users
+    # replace it as administrators, so give that unused account a unique password.
+    - name: Generate a unique password for the unused built-in admin account
+      ansible.builtin.set_fact:
+        openfire_bootstrap_admin_password: >-
+          {{ lookup('ansible.builtin.password', '/dev/null length=40 chars=ascii_letters,digits') }}
+      when: not openfire_setup_state.result.setup_complete
+      no_log: true
+
+    # The template contains all eight initial passwords until Openfire consumes
+    # and removes its autosetup block on startup; hide its contents from logs.
+    - name: Provision first-run Openfire settings and competition accounts
+      ansible.windows.win_template:
+        src: templates/openfire.xml.j2
+        dest: '{{ openfire_config_path }}'
+        backup: true
+      when: not openfire_setup_state.result.setup_complete
+      no_log: true
+
+    - name: Set Openfire service heap limit to 1 GB
+      ansible.windows.win_copy:
+        content: "-Xmx1024m\n"
+        dest: '{{ openfire_path }}\bin\openfire-service.vmoptions'
+      register: openfire_vmoptions
+
+    # The initial start reads the new VM options. On an existing setup, restart
+    # only when those options changed, leaving routine reruns uninterrupted.
+    - name: Start Openfire after first-run configuration
+      ansible.windows.win_service:
+        name: Openfire
+        state: started
+        start_mode: auto
+      when: not openfire_setup_state.result.setup_complete
+
+    - name: Restart Openfire if service options changed on an existing server
+      ansible.windows.win_service:
+        name: Openfire
+        state: restarted
+        start_mode: auto
+      when:
+        - openfire_setup_state.result.setup_complete
+        - openfire_vmoptions.changed
+
+    - name: Ensure Openfire runs automatically after a reboot
       ansible.windows.win_service:
         name: Openfire
         state: started
         start_mode: auto
 
-    # FEATURE 1 - WINDOWS FIREWALL MANAGEMENT
-    # Allow clients to connect to Openfire using TCP 5222
-    - name: Allow Openfire traffic through Windows Firewall
+    # Clients reach XMPP and HTTP chat over the network. The admin console also
+    # accepts remote HTTP connections on 9090, so all three ports need rules.
+    - name: Allow XMPP clients through Windows Firewall
       community.windows.win_firewall_rule:
-        name: "Openfire XMPP"
+        name: Openfire XMPP 5222
         localport: 5222
         action: allow
         direction: in
@@ -49,23 +139,75 @@
         state: present
         enabled: true
 
-    # FEATURE 2 - OPENFIRE CONFIGURATION MANAGEMENT
-    # Set the maximum memory Openfire can use to 1 GB.
-    - name: Configure Openfire memory
-      ansible.windows.win_copy:
-        content: "-Xmx1024m"
-        dest: "{{ openfire_path }}\\bin\\openfire-service.vmoptions"
-    # Restart Openfire to apply the configuration.
-    - name: Restart Openfire
-      ansible.windows.win_service:
-        name: Openfire
-        state: restarted
+    - name: Allow HTTP chat clients through Windows Firewall
+      community.windows.win_firewall_rule:
+        name: Openfire HTTP chat 7070
+        localport: 7070
+        action: allow
+        direction: in
+        protocol: tcp
+        state: present
+        enabled: true
 
-    # FEATURE 3 - OPENFIRE AVAILABILITY CHECK
-    # Wait for the Openfire web setup/admin interface to become available and uses Port 9090 for the web interface.
-    - name: Verify Openfire is responding on port 9090
+    - name: Allow HTTP admin console through Windows Firewall
+      community.windows.win_firewall_rule:
+        name: Openfire HTTP admin 9090
+        localport: 9090
+        action: allow
+        direction: in
+        protocol: tcp
+        state: present
+        enabled: true
+
+    # Port checks prove the listeners opened; the following requests also check
+    # the admin page and establish a BOSH session for the configured domain.
+    - name: Wait for XMPP, HTTP chat, and local admin console
       ansible.windows.win_wait_for:
         host: 127.0.0.1
-        port: 9090
+        port: '{{ item }}'
         state: started
         timeout: 120
+      loop:
+        - 5222
+        - 7070
+        - 9090
+
+    - name: Verify first-run setup completed
+      ansible.windows.win_powershell:
+        script: |
+          [xml]$config = Get-Content -LiteralPath '{{ openfire_config_path }}' -Raw
+          if ([string]$config.jive.setup -ne 'true') {
+              throw 'Openfire first-run setup did not complete.'
+          }
+          $Ansible.Changed = $false
+
+    - name: Verify the HTTP admin login is available on Bubblechat's network address
+      ansible.windows.win_uri:
+        url: 'http://{{ openfire_host_ip }}:9090/login.jsp'
+        method: GET
+        status_code: 200
+        use_proxy: false
+
+    - name: Verify the HTTP BOSH endpoint accepts the configured XMPP domain
+      ansible.windows.win_uri:
+        url: http://127.0.0.1:7070/http-bind/
+        method: POST
+        content_type: text/xml; charset=utf-8
+        body: >-
+          <body rid="1" xmlns="http://jabber.org/protocol/httpbind"
+          to="{{ openfire_xmpp_domain | e }}" xml:lang="en"
+          wait="60" hold="1" ver="1.6"/>
+        return_content: true
+        status_code: 200
+        use_proxy: false
+      register: openfire_bosh_response
+      retries: 12
+      delay: 5
+      until: openfire_bosh_response.content | default('') is search('sid=')
+
+    - name: Confirm BOSH returned a session identifier
+      ansible.builtin.assert:
+        that:
+          - openfire_bosh_response.content is search('sid=')
+        fail_msg: Openfire responded on port 7070 but did not establish a BOSH session.
+        quiet: true
