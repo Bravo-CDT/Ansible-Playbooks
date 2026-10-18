@@ -1,12 +1,12 @@
 # Bubblechat Openfire playbook
 
-This playbook installs Openfire 5.1.2 on the fresh Windows Server 2019 host named `bubblechat` and completes Openfire's first-run setup. It uses the embedded database and creates the eight accounts listed in the competition packet. All eight accounts receive the packet's shared initial password, `Patty321!`.
+This playbook installs Openfire 5.1.2 on a fresh Windows Server 2019 host named `bubblechat`. Openfire authenticates users against Active Directory over LDAPS at `treedome.krusty.krab:636` (`10.111.2.1`). The search base is `DC=krusty,DC=krab`, and usernames use AD's `sAMAccountName` attribute. The embedded database stores Openfire state; it is not used to authenticate users.
 
-| Admin accounts | Standard accounts |
-| --- | --- |
-| `kingneptune`, `paintythepirate`, `Mrkrabs`, `Spongebob`, `Squidward` | `patrick`, `sandy`, `Pearl` |
+The playbook does not create AD accounts or local Openfire accounts. The five administrator usernames (`kingneptune`, `paintythepirate`, `Mrkrabs`, `Spongebob`, and `Squidward`) must exist under the AD search base; the preflight verifies them. All eligible AD users under the search base can sign in for chat without console access. The original local-account playbook listed `patrick`, `sandy`, and `Pearl` as standard chat users. `Pearl` does not exist in the current AD, and an existing AD user can be used instead. There is no local recovery administrator. If AD is unavailable, these users cannot authenticate to Openfire.
 
-The playbook enables XMPP clients on TCP 5222 and HTTP chat on TCP 7070 (BOSH at `/http-bind/` and WebSocket at `/ws/`). The HTTP admin console is reachable from the network at `http://bubblechat.krusty.krab:9090` or `http://10.111.2.4:9090`. Windows Firewall allows inbound 5222, 7070, and 9090. Self-registration and anonymous XMPP authentication are disabled. The built-in `admin` account gets a generated password and is not in the administrator list.
+Openfire's [embedded database schema](https://raw.githubusercontent.com/igniterealtime/Openfire/v5.1.2/distribution/src/database/openfire_hsqldb.sql) seeds a built-in `admin` record. LDAP-only user and authentication providers make that record inaccessible. Do not enable local or hybrid authentication later without first rotating or removing its default password.
+
+The playbook enables XMPP clients on TCP 5222 and HTTP chat on TCP 7070 (BOSH at `/http-bind/` and WebSocket at `/ws/`). The HTTP admin console is reachable from the network at `http://bubblechat.krusty.krab:9090` or `http://10.111.2.4:9090`. Windows Firewall allows inbound 5222, 7070, and 9090. Self-registration and anonymous XMPP authentication are disabled.
 
 ## Before running
 
@@ -16,18 +16,30 @@ Install the Windows collections on the Ansible controller:
 ansible-galaxy collection install ansible.windows community.windows
 ```
 
-The inventory must contain a Windows host named `bubblechat` with working Ansible/WinRM access and administrator privileges. The XMPP domain is set to `krusty.krab`, matching the AD DNS domain. The Openfire server hostname is `bubblechat.krusty.krab`. XMPP users will have addresses such as `Spongebob@krusty.krab`. This naming does not make Openfire use AD authentication; the playbook creates local Openfire accounts.
+The inventory must contain a Windows host named `bubblechat` with working Ansible/WinRM access and administrator privileges. This repository does not contain an inventory file. On the Ansible controller, check your existing inventory before deployment (replace `PATH_TO_INVENTORY` with its actual path):
+
+```sh
+ansible-inventory -i PATH_TO_INVENTORY --host bubblechat
+ansible -i PATH_TO_INVENTORY bubblechat -m ansible.windows.win_ping
+ansible-playbook -i PATH_TO_INVENTORY --syntax-check Openfire/openfire-install.yml
+```
+
+The first command must show the `bubblechat` host, the second must return `pong`, and the syntax check must pass. If either connectivity check fails, set up the inventory and WinRM connection before running this playbook. From Bubblechat, `treedome.krusty.krab` must resolve to the DC and TCP 636 must be reachable. Its Windows certificate store must trust the DC's LDAPS certificate chain for the playbook's bind preflight. The DC certificate must identify `treedome.krusty.krab`. The preflight confirms that the bind account works and that the five admin usernames exist below `DC=krusty,DC=krab`.
+
+The playbook uses the selected Blue Team Domain Admin account `mrkrabs` (`CN=mrkrabs,CN=Users,DC=KRUSTY,DC=KRAB`) for its LDAP bind. Openfire needs only directory search/read access; Domain Admin privileges are not required for this function. The password is stored in the tracked playbook and deployed Openfire configuration, so access to either exposes this privileged AD credential. No LDAP credential prompt or extra variables are needed. The playbook stops before installing Openfire if the bind or directory search fails. Replace `inventory` with your actual inventory path:
 
 ```sh
 ansible-playbook -i inventory Openfire/openfire-install.yml
 ```
 
-In AD DNS, ensure `bubblechat.krusty.krab` has an A record pointing to `10.111.2.4`. For XMPP clients that discover the server from `krusty.krab`, add an SRV record for `_xmpp-client._tcp.krusty.krab` targeting `bubblechat.krusty.krab` on port `5222`. Keep the existing `krusty.krab` records used by AD. HTTP clients should use `http://bubblechat.krusty.krab:7070/http-bind/` or `ws://bubblechat.krusty.krab:7070/ws/` with XMPP domain `krusty.krab`.
+The playbook does not create or change `mrkrabs` in AD. If that account's password changes, update the `openfire_ldap_bind_password` variable in the playbook and the deployed Openfire configuration; a normal rerun does not replace Openfire's completed first-run configuration.
 
-The playbook stops the service before writing its first-run configuration, because the Windows installer starts Openfire automatically. On later runs it preserves Openfire's initialized configuration and database. If scoring requires a different XMPP domain, override `openfire_xmpp_domain` **before the first deployment**. The initial account password can be overridden with `openfire_account_password` if the competition changes it; supply an override through Ansible Vault rather than a shell argument. A changed domain or account password after first-run setup needs an explicit migration or password update; rerunning the playbook will not silently reset accounts.
+Openfire's XMPP domain is `krusty.krab`, so users have addresses such as `Spongebob@krusty.krab`. The server hostname is `bubblechat.krusty.krab`. In AD DNS, ensure `bubblechat.krusty.krab` has an A record pointing to `10.111.2.4`. For XMPP clients that discover the server from `krusty.krab`, add an SRV record for `_xmpp-client._tcp.krusty.krab` targeting `bubblechat.krusty.krab` on port `5222`. Keep the existing `krusty.krab` records used by AD. HTTP clients should use `http://bubblechat.krusty.krab:7070/http-bind/` or `ws://bubblechat.krusty.krab:7070/ws/` with XMPP domain `krusty.krab`.
+
+The playbook stops the service before writing its first-run configuration because the Windows installer starts Openfire automatically. On later runs it preserves Openfire's initialized configuration and database. Changes to the domain, LDAP settings, bind credentials, or administrator list after first-run setup require an explicit update of the deployed Openfire configuration; rerunning this playbook will not apply a new template.
 
 ## Check after deployment
 
-The playbook verifies ports 5222, 7070, and 9090 locally, checks the admin login page using Bubblechat's network address, and establishes a BOSH session for the supplied XMPP domain. It does not perform an authenticated login or send a chat message. After deployment, sign in as one admin and one standard account, send a message through the scoring client, and confirm Grey Team can use its two admin accounts.
+The playbook checks that the DC's LDAPS port is reachable, binds to AD, finds the five administrator accounts, verifies ports 5222, 7070, and 9090 locally, checks the admin login page through Bubblechat's network address, and establishes a BOSH session for the configured XMPP domain. These checks do not authenticate through Openfire. After deployment, sign in with one named AD admin and one standard AD user, send a message through the scoring client, and verify that an AD account outside the admin list cannot access the console. Check Openfire's LDAP logs if any login fails.
 
-The shared initial password and HTTP transport are competition requirements. Remote admin sign-ins will send credentials over plain HTTP; use this only on the isolated competition network and change credentials when the event permits.
+Openfire 5.1.2's [LDAP socket factory](https://raw.githubusercontent.com/igniterealtime/Openfire/v5.1.2/xmppserver/src/main/java/org/jivesoftware/util/SimpleSSLSocketFactory.java) encrypts the LDAPS connection but does not validate the DC certificate's trust chain. Importing the CA certificate into Java's truststore does not fix that behavior. If the deployment requires authenticated server identity for LDAP, use a vetted Openfire fix or a TLS proxy that validates the DC certificate before routing credentials. The remote admin console and HTTP chat endpoints above also use plain HTTP; restrict access to the intended competition network.

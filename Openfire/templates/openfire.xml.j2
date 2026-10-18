@@ -9,6 +9,26 @@
     <className>org.jivesoftware.database.EmbeddedConnectionProvider</className>
   </connectionProvider>
 
+  <ldap>
+    <host>{{ openfire_ldap_host | e }}</host>
+    <port>{{ openfire_ldap_port }}</port>
+    <baseDN>{{ openfire_ldap_base_dn | e }}</baseDN>
+    <adminDN>{{ openfire_ldap_bind_dn | e }}</adminDN>
+    <adminPassword>{{ openfire_ldap_bind_password | e }}</adminPassword>
+    <usernameField>sAMAccountName</usernameField>
+    <nameField>displayName</nameField>
+    <sslEnabled>true</sslEnabled>
+  </ldap>
+
+  <provider>
+    <user>
+      <className>org.jivesoftware.openfire.ldap.LdapUserProvider</className>
+    </user>
+    <auth>
+      <className>org.jivesoftware.openfire.ldap.LdapAuthProvider</className>
+    </auth>
+  </provider>
+
   <admin>
     <authorizedUsernames>{{ openfire_admin_users | join(',') | e }}</authorizedUsernames>
   </admin>
@@ -37,17 +57,8 @@
     <database>
       <mode>embedded</mode>
     </database>
-    <admin>
-      <password>{{ openfire_bootstrap_admin_password | e }}</password>
-    </admin>
-    <users>
-{% for username in openfire_admin_users + openfire_standard_users %}
-      <user{{ loop.index }}>
-        <username>{{ username | e }}</username>
-        <password>{{ openfire_account_password | e }}</password>
-        <name>{{ username | e }}</name>
-      </user{{ loop.index }}>
-{% endfor %}
-    </users>
+    <authprovider>
+      <mode>ldap</mode>
+    </authprovider>
   </autosetup>
 </jive>

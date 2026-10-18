@@ -1,5 +1,5 @@
 ---
-# First-run configuration for the competition's Bubblechat server.
+# First-run configuration for the competition's AD-backed Bubblechat server.
 - name: Install and configure Openfire
   hosts: bubblechat
   gather_facts: false
@@ -15,21 +15,20 @@
     openfire_xmpp_domain: krusty.krab
     openfire_hostname: bubblechat.krusty.krab
     openfire_host_ip: 10.111.2.4
-    # Shared initial password assigned in the competition packet.
-    openfire_account_password: 'Patty321!'
-    # Grey Team and the three designated Blue Team users can administer Openfire.
+    # Use the DC's DNS name for the LDAPS connection.
+    openfire_ldap_host: treedome.krusty.krab
+    openfire_ldap_port: 636
+    openfire_ldap_base_dn: DC=krusty,DC=krab
+    # Blue Team Domain Admin selected as the LDAP bind identity for this install.
+    openfire_ldap_bind_dn: CN=mrkrabs,CN=Users,DC=KRUSTY,DC=KRAB
+    openfire_ldap_bind_password: 'Patty321!'
+    # Grey Team and the three designated Blue Team AD users can administer Openfire.
     openfire_admin_users:
       - kingneptune
       - paintythepirate
       - Mrkrabs
       - Spongebob
       - Squidward
-    # These Blue Team users can chat but cannot access the admin console.
-    openfire_standard_users:
-      - patrick
-      - sandy
-      - Pearl
-
   tasks:
     # The XMPP domain becomes part of every user's address after first-run setup.
     - name: Validate the XMPP domain
@@ -40,6 +39,77 @@
         fail_msg: >-
           Supply the XMPP domain that scoring clients will use.
         quiet: true
+
+    - name: Require LDAP bind credentials
+      ansible.builtin.assert:
+        that:
+          - openfire_ldap_bind_dn | default('') | trim | length > 0
+          - openfire_ldap_bind_password | default('') | length > 0
+        fail_msg: >-
+          Set openfire_ldap_bind_dn and openfire_ldap_bind_password before
+          installing Openfire.
+        quiet: true
+
+    - name: Wait for the domain controller's LDAPS listener
+      ansible.windows.win_wait_for:
+        host: '{{ openfire_ldap_host }}'
+        port: '{{ openfire_ldap_port }}'
+        state: started
+        timeout: 30
+
+    - name: Verify the LDAPS bind and five AD administrator accounts
+      ansible.windows.win_powershell:
+        error_action: stop
+        script: |
+          param(
+              [string]$Server,
+              [int]$Port,
+              [string]$BaseDN,
+              [string]$AdminUsersJson,
+              [PSCredential]$BindCredential
+          )
+
+          Add-Type -AssemblyName System.DirectoryServices.Protocols
+          $identifier = [System.DirectoryServices.Protocols.LdapDirectoryIdentifier]::new($Server, $Port, $true, $false)
+          $connection = [System.DirectoryServices.Protocols.LdapConnection]::new(
+              $identifier,
+              $BindCredential.GetNetworkCredential(),
+              [System.DirectoryServices.Protocols.AuthType]::Basic
+          )
+          $connection.SessionOptions.ProtocolVersion = 3
+          $connection.SessionOptions.SecureSocketLayer = $true
+          $connection.Timeout = [TimeSpan]::FromSeconds(10)
+
+          try {
+              $connection.Bind()
+              foreach ($username in (ConvertFrom-Json -InputObject $AdminUsersJson)) {
+                  $escaped = $username.Replace('\', '\5c').Replace('*', '\2a').Replace('(', '\28').Replace(')', '\29')
+                  $filter = "(&(objectCategory=person)(objectClass=user)(sAMAccountName=$escaped))"
+                  $request = [System.DirectoryServices.Protocols.SearchRequest]::new(
+                      $BaseDN,
+                      $filter,
+                      [System.DirectoryServices.Protocols.SearchScope]::Subtree,
+                      [string[]]@('distinguishedName')
+                  )
+                  $response = $connection.SendRequest($request)
+                  if ($response.Entries.Count -ne 1) {
+                      throw "Expected one AD user named '$username' below '$BaseDN'; found $($response.Entries.Count)."
+                  }
+              }
+          }
+          finally {
+              $connection.Dispose()
+          }
+          $Ansible.Changed = $false
+        parameters:
+          Server: '{{ openfire_ldap_host }}'
+          Port: '{{ openfire_ldap_port }}'
+          BaseDN: '{{ openfire_ldap_base_dn }}'
+          AdminUsersJson: '{{ openfire_admin_users | to_json }}'
+        sensitive_parameters:
+          - name: BindCredential
+            username: '{{ openfire_ldap_bind_dn }}'
+            password: '{{ openfire_ldap_bind_password }}'
 
     - name: Install Java 17 JRE
       ansible.windows.win_package:
@@ -78,22 +148,12 @@
         state: stopped
       when: not openfire_setup_state.result.setup_complete
 
-    # Autosetup also creates Openfire's built-in admin user. The five named users
-    # replace it as administrators, so give that unused account a unique password.
-    - name: Generate a unique password for the unused built-in admin account
-      ansible.builtin.set_fact:
-        openfire_bootstrap_admin_password: >-
-          {{ lookup('ansible.builtin.password', '/dev/null length=40 chars=ascii_letters,digits') }}
-      when: not openfire_setup_state.result.setup_complete
-      no_log: true
-
-    # The template contains all eight initial passwords until Openfire consumes
-    # and removes its autosetup block on startup; hide its contents from logs.
-    - name: Provision first-run Openfire settings and competition accounts
+    # The template contains the LDAP bind password; hide it from task logs.
+    - name: Provision first-run Openfire settings with AD authentication
       ansible.windows.win_template:
         src: templates/openfire.xml.j2
         dest: '{{ openfire_config_path }}'
-        backup: true
+        backup: false
       when: not openfire_setup_state.result.setup_complete
       no_log: true
 
