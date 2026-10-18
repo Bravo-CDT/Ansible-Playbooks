@@ -10,7 +10,7 @@
     name: "{{ item.name }}"
     password: "{{ item.password | password_hash('sha512', 'ansiblesalt') }}"
     groups: "{{ 'sudo' if item.sudo else omit }}"
-    append: true
+    append: "{{ item.sudo | bool }}"
     shell: /bin/bash
     state: present
   loop: "{{ users }}"
