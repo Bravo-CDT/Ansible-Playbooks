@@ -68,9 +68,9 @@
   hosts: pattyvault
   vars:
     become: true
-    db_user: "{{ lookup('ansible.builtin.env', 'DB_USER') | default('bravo', true) }}"
-    db_password: "{{ lookup('ansible.builtin.env', 'DB_PASSWORD') }}"
-    db_name: "{{ lookup('ansible.builtin.env', 'DB_NAME') | default('bravo', true) }}"
+    db_user: "bravo"
+    db_password: "ANYTHING" # Replace
+    db_name: "KrustySafe" # Replace
 
   roles:
     - postgresql-set-up
