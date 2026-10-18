@@ -1,4 +1,16 @@
 ---
+- name: Update packages
+  hosts: linux
+  become: true
+  tasks:
+    - name: Upgrade all packages
+      ansible.builtin.apt:
+        upgrade: dist
+        update_cache: true
+  tags:
+    - update
+    - full-deploy
+
 - name: Create users
   hosts: linux
   become: true
