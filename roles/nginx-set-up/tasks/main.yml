@@ -1,0 +1,9 @@
+---
+- name: Install Docker
+  ansible.builtin.import_tasks: docker.yml
+
+- name: Run WordPress containers
+  ansible.builtin.import_tasks: wordpress.yml
+
+- name: Configure nginx reverse proxy
+  ansible.builtin.import_tasks: nginx.yml

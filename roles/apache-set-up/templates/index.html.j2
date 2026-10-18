@@ -1,16 +1,104 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
 	<!-- Custom team name from the Apache play vars in playbook.yml -->
-	<title>{{ team_name }} Web Server</title>
+	<title>{{ team_name }} Web Server | The Krusty Krab</title>
+	<style>
+		:root {
+			--sea: #0b6e99;
+			--deep: #064663;
+			--sand: #f2d388;
+			--krab: #d6392b;
+			--cream: #fff8e1;
+			--ink: #2b2b2b;
+		}
+		* { box-sizing: border-box; }
+		body {
+			margin: 0;
+			min-height: 100vh;
+			display: flex;
+			flex-direction: column;
+			align-items: center;
+			justify-content: center;
+			padding: 24px 16px;
+			font-family: "Trebuchet MS", "Segoe UI", sans-serif;
+			color: var(--ink);
+			background: linear-gradient(180deg, var(--sea) 0%, var(--deep) 100%);
+		}
+		.sign {
+			background: var(--cream);
+			border: 6px solid var(--krab);
+			border-radius: 20px;
+			box-shadow: 0 10px 0 rgba(0, 0, 0, 0.25);
+			max-width: 640px;
+			width: 100%;
+			text-align: center;
+			overflow: hidden;
+		}
+		.banner {
+			background: var(--krab);
+			color: var(--cream);
+			padding: 18px 16px 14px;
+		}
+		.banner .eyebrow {
+			margin: 0;
+			font-size: 0.85rem;
+			letter-spacing: 0.25em;
+			text-transform: uppercase;
+			opacity: 0.9;
+		}
+		.banner h1 {
+			margin: 4px 0 0;
+			font-size: 2.6rem;
+			letter-spacing: 0.04em;
+			text-shadow: 3px 3px 0 rgba(0, 0, 0, 0.25);
+		}
+		.content { padding: 28px 24px 32px; }
+		.content h2 {
+			margin: 0 0 12px;
+			color: var(--deep);
+			font-size: 1.5rem;
+		}
+		.status {
+			display: inline-block;
+			margin: 8px 0 0;
+			padding: 12px 20px;
+			background: var(--sand);
+			border-radius: 999px;
+			font-size: 1.1rem;
+			font-weight: bold;
+		}
+		.status::before {
+			content: "\25CF";
+			color: #2e9d4a;
+			margin-right: 10px;
+		}
+		footer {
+			margin-top: 20px;
+			color: var(--cream);
+			font-size: 0.9rem;
+			opacity: 0.85;
+			text-align: center;
+		}
+	</style>
 </head>
 
 <body>
-	<!-- Custom team name and competition name from the Apache play vars in playbook.yml -->
-	<h1>{{ team_name }}</h1>
-	<h2>{{ comp_name }}</h2>
-
-	<!-- Custom status message from the Apache play vars in playbook.yml -->
-	<p>{{ apache_status }}</p>
+	<div class="sign">
+		<div class="banner">
+			<p class="eyebrow">Home of the Krabby Patty</p>
+			<!-- Custom team name from the Apache play vars -->
+			<h1>{{ team_name }}</h1>
+		</div>
+		<div class="content">
+			<!-- Custom competition name from the Apache play vars -->
+			<h2>{{ comp_name }}</h2>
+			<!-- Custom status message from the Apache play vars -->
+			<p class="status">{{ apache_status }}</p>
+		</div>
+	</div>
+	<footer>The Krusty Krab &middot; 831 Bottom Feeder Lane, Bikini Bottom</footer>
 </body>
 </html>
