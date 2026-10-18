@@ -1,41 +1,24 @@
 ---
 # Installs the base Apache package on target machine(s)
 - name: Install Apache
-  apt:
+  ansible.builtin.apt:
     name: apache2
-    update_cache: yes
-  become: yes
+    state: present
+    update_cache: true
+    cache_valid_time: 3600
 
-# Determines Apache's current state and enabled status
-- name: Information Gathering
-  service_facts: 
-
-# Enable Apache at boot when it is currently disabled
-- name: Ensure Apache is Enabled
-  service: 
+# Enable Apache at boot and make sure it is running
+- name: Ensure Apache is Enabled and Running
+  ansible.builtin.service:
     name: apache2
-    enabled: yes
-  become: yes
-  when: ansible_facts.services['apache2.service'].status != 'enabled'
-
-# Refresh service_facts after potential change
-- name: Refresh Information Gathering
-  service_facts: 
-
-# Start Apache if it has been manually stopped
-- name: Ensure Apache is Running
-  service: 
-    name: apache2
+    enabled: true
     state: started
-  become: yes
-  when: ansible_facts.services['apache2.service'].state != 'running' 
 
 # Deploy a custom Gray Team webpage to the Apache web directory
 - name: Deploy Custom Webpage
-  template: 
-    src: ./index.html.j2
+  ansible.builtin.template:
+    src: index.html.j2
     dest: /var/www/html/index.html
     owner: root
     group: root
     mode: '0644'
-  become: yes
