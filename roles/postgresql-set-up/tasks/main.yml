@@ -52,9 +52,10 @@
 
 # Allow remote clients
 - name: Listen on all interfaces
-  community.postgresql.postgresql_set:
-    name: listen_addresses
+  community.postgresql.postgresql_alter_system:
+    param: listen_addresses
     value: "*"
+    login_db: postgres
   become_user: postgres
   notify: Restart PostgreSQL
 
