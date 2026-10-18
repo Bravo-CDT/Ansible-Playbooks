@@ -15,19 +15,6 @@
     state: present
   loop: "{{ users }}"
 
-# Set up SSH
-- name: Install OpenSSH Server
-  ansible.builtin.apt:
-    name: openssh-server
-    state: present
-    update_cache: true
-
-- name: Ensure SSH service is started and enabled on boot
-  ansible.builtin.service:
-    name: ssh
-    state: started
-    enabled: true
-
 # DNS Set Up
 - name: Ensure resolved.conf.d directory exists
   ansible.builtin.file:
