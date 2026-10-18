@@ -1,0 +1,50 @@
+---
+# Create users
+- name: Ensure sudo group exists
+  ansible.builtin.group:
+    name: sudo
+    state: present
+
+- name: Create user accounts with team-specific hashed passwords
+  ansible.builtin.user:
+    name: "{{ item.name }}"
+    password: "{{ item.password | password_hash('sha512') }}"
+    groups: "{{ 'sudo' if item.sudo else omit }}"
+    append: true
+    shell: /bin/bash
+    state: present
+  loop: "{{ users }}"
+
+# Set up SSH
+- name: Install OpenSSH Server
+  ansible.builtin.apt:
+    name: openssh-server
+    state: present
+    update_cache: true
+
+- name: Ensure SSH service is started and enabled on boot
+  ansible.builtin.service:
+    name: ssh
+    state: started
+    enabled: true
+
+# DNS Set Up
+- name: Ensure resolved.conf.d directory exists
+  ansible.builtin.file:
+    path: /etc/systemd/resolved.conf.d
+    state: directory
+    mode: '0755'
+
+- name: Configure DNS and search domain in systemd-resolved
+  ansible.builtin.ini_file:
+    path: /etc/systemd/resolved.conf.d/dns.conf
+    section: Resolve
+    option: "{{ DNS }}"
+    value: "{{ dc_ip }}"
+    mode: '0644'
+    create: true
+
+- name: Restart systemd-resolved
+  ansible.builtin.systemd:
+    name: systemd-resolved
+    state: restarted

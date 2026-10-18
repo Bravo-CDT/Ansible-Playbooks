@@ -1,4 +1,48 @@
 ---
+- name: Create users
+  hosts: linux
+  vars:
+    become: true
+    path_to_root_cert: '/home/user/RootCA.pem' # Replace with user on ansible controller
+    dc_ip: 10.111.2.1
+    grey_team_password: "Anything" # Replace with something valid
+    blue_team_password: "Patty321!"
+    users:
+      # Grey Team (Sudo)
+      - name: kingneptune
+        sudo: true
+        password: "{{ grey_team_password }}"
+      - name: paintythepirate
+        sudo: true
+        password: "{{ grey_team_password }}"
+
+      # Blue Team Admins (Sudo)
+      - name: mrkrabs
+        sudo: true
+        password: "{{ blue_team_password }}"
+      - name: spongebob
+        sudo: true
+        password: "{{ blue_team_password }}"
+      - name: squidward
+        sudo: true
+        password: "{{ blue_team_password }}"
+
+      # Blue Team Standard Users (No Sudo)
+      - name: patrick
+        sudo: false
+        password: "{{ blue_team_password }}"
+      - name: sandy
+        sudo: false
+        password: "{{ blue_team_password }}"
+      - name: pearl
+        sudo: false
+        password: "{{ blue_team_password }}"
+  roles:
+    - theme-set-up
+  tags:
+    - theme
+    - full-deploy
+
 - name: Set Up SMB
   hosts: shellphone
   vars:
