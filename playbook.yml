@@ -1,8 +1,8 @@
 ---
 - name: Create users
   hosts: linux
+  become: true
   vars:
-    become: true
     path_to_root_cert: '/home/user/RootCA.pem' # Replace with user on ansible controller
     dc_ip: 10.111.2.1
     grey_team_password: "Anything" # Replace with something valid
