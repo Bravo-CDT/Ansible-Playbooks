@@ -39,17 +39,3 @@
     group: root
     mode: '0644'
   become: yes
-
-# Retrieve Apache access logs and store them on the Ansible controller
-- name: Collect Apache Access Logs
-  fetch: 
-    src: /var/log/apache2/access.log
-    dest: logs/access/
-  become: yes
-
-    # Retrieve Apache error logs and store them on the Ansible controller
-    - name: Collect Apache Error Logs            
-      fetch: 
-        src: /var/log/apache2/error.log 
-        dest: logs/error/
-      become: yes
