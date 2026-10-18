@@ -61,6 +61,7 @@
 - name: Find pg_hba.conf
   community.postgresql.postgresql_query:
     query: SHOW hba_file
+    login_db: postgres
   register: hba_file
   changed_when: false
   become_user: postgres
