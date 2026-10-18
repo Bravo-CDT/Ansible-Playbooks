@@ -1,0 +1,40 @@
+---
+- name: Install PostgreSQL repository prerequisites
+  ansible.builtin.apt:
+    name:
+      - postgresql-common
+      - ca-certificates
+    state: present
+    update_cache: true
+
+- name: Configure PostgreSQL PGDG repository
+  ansible.builtin.command:
+    cmd: /usr/share/postgresql-common/pgdg/apt.postgresql.org.sh -y
+  args:
+    creates: /etc/apt/sources.list.d/pgdg.sources
+
+- name: Install PostgreSQL and Python adapter
+  ansible.builtin.apt:
+    name:
+      - postgresql
+      - python3-psycopg2
+    state: present
+    update_cache: true
+
+- name: Confirm Password Presence
+  ansible.builtin.fail:
+    msg: "DB_PASSWORD environment variable is not set. Did you run `source .env`?"
+  when: db_password == ""
+
+- name: Create Database User
+  community.postgresql.postgresql_user:
+    name: "{{ db_user }}"
+    password: "{{ db_password }}"
+    role_attr_flags: "NOSUPERUSER,CREATEDB"
+    state: present
+
+- name: Create Database and Assign Owner
+  community.postgresql.postgresql_db:
+    name: "{{ db_name }}"
+    owner: "{{ db_user }}"
+    state: present

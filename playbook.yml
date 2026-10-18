@@ -10,4 +10,27 @@
     - smb
     - full-deploy
 
-- name: 
+- name: Set up SMTP
+  hosts: bottlemail
+  vars:
+  roles:
+    - smtp-set-up
+  tags:
+    - smtp
+    - full-deploy
+
+# ansible-galaxy collection install community.postgresql
+- name: postgresql
+  hosts: pattyvault
+  vars:
+    become: true
+    db_user: "{{ lookup('ansible.builtin.env', 'DB_USER') | default('bravo', true) }}"
+    db_password: "{{ lookup('ansible.builtin.env', 'DB_PASSWORD') }}"
+    db_name: "{{ lookup('ansible.builtin.env', 'DB_NAME') | default('bravo', true) }}"
+
+  roles:
+    - postgresql-set-up
+  tags:
+    - sql
+    - full-deploy
+

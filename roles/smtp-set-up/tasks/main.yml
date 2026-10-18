@@ -6,7 +6,6 @@
     state: latest
   become: yes
 
-
   #==============================================================
   # Feature 2: Use postconf to edit Postfix's config file
   #==============================================================
@@ -70,16 +69,3 @@
     path: /etc/s-nail.rc 
     line: set folder=Maildir
   become: yes
-
-
-  #=====================================================
-  # Feature 4: Send a test email on Spongebob's behalf
-  #=====================================================
-- name: Send a test email
-  community.general.mail:
-    host: {{ hostname }}
-    port: 25
-    subject: Testing, testing...
-    to: Eugene Krabs <ekrabs@{{ hostname }}>
-    from: Spongebob Squarepants <ssquarepants@{{ hostname }}>
-    body: We are ship shape and ready to go!
