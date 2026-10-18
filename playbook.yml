@@ -64,7 +64,7 @@
     - full-deploy
 
 # ansible-galaxy collection install community.postgresql
-- name: postgresql
+- name: Set Up PostgreSql
   hosts: pattyvault
   vars:
     become: true
@@ -78,3 +78,14 @@
     - sql
     - full-deploy
 
+- name: Set Up Apache
+  hosts: thesafe
+  vars:
+    team_name: "Bravo"
+    comp_name: "CSEC473 Competition"
+    apache_status: "Welcome to the Bravo Apache Web Server!"
+  roles:
+    - apache-set-up
+  tags:
+    - apache
+    - full-deploy
