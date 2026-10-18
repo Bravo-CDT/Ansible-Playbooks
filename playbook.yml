@@ -1,0 +1,13 @@
+---
+- name: Set Up SMB
+  hosts: shellphone
+  vars:
+    smb_username: spongebob #replace with any scored user
+    smb_password: "Patty123!" # replace to follow packet
+  roles:
+    - smb-set-up
+  tags:
+    - smb
+    - full-deploy
+
+- name: 
