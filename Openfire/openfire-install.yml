@@ -15,9 +15,9 @@
     openfire_xmpp_domain: krusty.krab
     openfire_hostname: bubblechat.krusty.krab
     openfire_host_ip: 10.111.2.4
-    # Use the DC's DNS name for the LDAPS connection.
+    # StartTLS on LDAP port 389 protects credentials before the simple bind.
     openfire_ldap_host: treedome.krusty.krab
-    openfire_ldap_port: 636
+    openfire_ldap_port: 389
     openfire_ldap_base_dn: DC=krusty,DC=krab
     # Blue Team Domain Admin selected as the LDAP bind identity for this install.
     openfire_ldap_bind_dn: CN=mrkrabs,CN=Users,DC=KRUSTY,DC=KRAB
@@ -62,15 +62,17 @@
           Set openfire_ldap_bind_dn and openfire_ldap_bind_password before
           installing Openfire.
         quiet: true
+      tags: [ldap_check]
 
-    - name: Wait for the domain controller's LDAPS listener
+    - name: Wait for the domain controller's LDAP listener
       ansible.windows.win_wait_for:
         host: '{{ openfire_ldap_host }}'
         port: '{{ openfire_ldap_port }}'
         state: started
         timeout: 30
+      tags: [ldap_check]
 
-    - name: Verify the LDAPS bind and five AD administrator accounts
+    - name: Verify the StartTLS bind and five AD administrator accounts
       ansible.windows.win_powershell:
         error_action: stop
         script: |
@@ -89,11 +91,13 @@
               $BindCredential.GetNetworkCredential(),
               [System.DirectoryServices.Protocols.AuthType]::Basic
           )
+          $connection.AutoBind = $false
           $connection.SessionOptions.ProtocolVersion = 3
-          $connection.SessionOptions.SecureSocketLayer = $true
+          $connection.SessionOptions.SecureSocketLayer = $false
           $connection.Timeout = [TimeSpan]::FromSeconds(10)
 
           try {
+              $connection.SessionOptions.StartTransportLayerSecurity($null)
               $connection.Bind()
               foreach ($username in (ConvertFrom-Json -InputObject $AdminUsersJson)) {
                   $escaped = $username.Replace('\', '\5c').Replace('*', '\2a').Replace('(', '\28').Replace(')', '\29')
@@ -123,6 +127,7 @@
           - name: BindCredential
             username: '{{ openfire_ldap_bind_dn }}'
             password: '{{ openfire_ldap_bind_password }}'
+      tags: [ldap_check]
 
     - name: Install Java 17 JRE
       ansible.windows.win_package:
