@@ -1,0 +1,4 @@
+---
+# Full deployment. Windows first (DC and CA), then Linux, which depends on them.
+- import_playbook: windows.yml
+- import_playbook: linux.yml

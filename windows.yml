@@ -13,23 +13,6 @@
 - name: Install theme assets and tools
   hosts: windows
   gather_facts: false
-  vars:
-    shared_vars: &shared_vars
-    # Domain Declaration
-      netbios_name: KRUSTY
-      domain_name: "KRUSTY.KRAB"
-      domain_admin: "{{ netbios_name }}\\kingneptune" # grey team admin
-
-      # Passwords
-      local_user_password: "PineappleRush82!" # Used for Grey Team Local Admin
-      blue_team_admins_password: "Patty321!" # Password for Blue Team Domain Admins
-      grey_team_users_password: "Pizza4Breakfast!" # Password for Grey Team Domain Admins
-
-      # Ansible user pswd and become pswd for windows
-      ansible_password: "IWant2Sleep!" # Built in administator (ansible - user
-      ansible_become_password: "{{ grey_team_users_password }}"
-    <<: *shared_vars
-    ansible_user: Administrator 
   roles:
     - theme-and-tools
   tags:
@@ -41,9 +24,8 @@
   hosts: treedome
   gather_facts: false
   vars: 
-    <<: *shared_vars
     safe_mode_password: "Coffee@Midnight8" # Password to restore AD
-    blue_team_users_password: "Patty321!" # Password for blue team domain users
+    blue_team_users_password: "{{ default_password }}" # Password for blue team domain users
     cursor_path: "{{ playbook_dir }}/Theme-assets/cursor.cur"
     ansible_user: Administrator
     # Hosts to add to dns records on AD DC
@@ -63,10 +45,7 @@
   hosts: windows_clients
   gather_facts: false
   vars: 
-    <<: *shared_vars
     ansible_user: Administrator
-    # IP of AD DC
-    dc_ip: 10.111.2.1
   roles:
     - join-domain
   tags:
@@ -77,10 +56,6 @@
   hosts: goldenspatula
   gather_facts: false
   vars: 
-    ca_shared: &ca_shared
-      CACommonName: "KRUSTY-KRAB-CA"
-    <<: *ca_shared
-    <<: *shared_vars
     ansible_user: "{{ netbios_name }}\\Administrator"
   roles:
     - ca-set-up
@@ -90,9 +65,9 @@
 
 - name: Distribute CA ROOT cert with linux
   hosts: linux
+  become: true
   vars:
-    path_to_root_cert: "{{ playbook_dir }}./RootCA.pem"
-    become: true
+    path_to_root_cert: "{{ playbook_dir }}/RootCA.pem"
   roles:
     - share-ca-cert
   tags:
@@ -104,8 +79,6 @@
   hosts: orderwindow
   gather_facts: false
   vars:
-    <<: *shared_vars
-    <<: *ca_shared
     ansible_user: "{{ netbios_name }}\\Administrator"
     web_root: "C:/inetpub/wwwroot"
     web_dns_name: "orderwindow.{{ domain_name }}"
@@ -119,7 +92,6 @@
   hosts: bubblechat
   gather_facts: false
   vars:
-    <<: *shared_vars
     ansible_user: "{{ netbios_name }}\\Administrator"
     java_url: https://api.adoptium.net/v3/installer/latest/17/ga/windows/x64/jre/hotspot/normal/eclipse?project=jdk
     openfire_url: https://download.igniterealtime.org/openfire/openfire_5_1_2_x64.exe
@@ -149,7 +121,6 @@
   hosts: kelpdelivery
   gather_facts: false
   vars:
-    <<: *shared_vars
     ansible_user: "{{ netbios_name }}\\Administrator"
   roles:
     - telnet-set-up

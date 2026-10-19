@@ -1,0 +1,14 @@
+---
+ansible_connection: winrm
+ansible_port: 5985
+ansible_winrm_transport: ntlm
+ansible_winrm_server_cert_validation: ignore
+ansible_user: Administrator
+
+# Built in administrator (ansible user)
+ansible_password: "IWant2Sleep!"
+ansible_become_password: "{{ grey_team_users_password }}"
+
+domain_admin: "{{ netbios_name }}\\kingneptune" # grey team admin
+local_user_password: "PineappleRush82!"         # Used for Grey Team Local Admin
+CACommonName: "KRUSTY-KRAB-CA"

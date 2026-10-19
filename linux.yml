@@ -15,9 +15,6 @@
   hosts: linux
   become: true
   vars:
-    path_to_root_cert: '/home/user/RootCA.pem' # Replace with user on ansible controller
-    dc_ip: 10.111.2.1
-    grey_team_password: "Anything" # Replace with something valid
     users:
       # Grey Team (Sudo)
       - name: kingneptune
@@ -74,7 +71,7 @@
     ad_server: "treedome.krusty.krab"
     ad_search_base: "DC=krusty,DC=krab"
     ad_bind_user: "mrkrabs@krusty.krab"
-    ad_bind_password: "Patty321!"
+    ad_bind_password: "{{ default_password }}"
     smtp_hostname: "bottlemail.krusty.krab"
   roles:
     - smtp-set-up

@@ -1,0 +1,4 @@
+---
+ansible_user: cyberrange
+ansible_connection: ssh
+ansible_port: 22

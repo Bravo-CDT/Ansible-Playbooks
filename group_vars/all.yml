@@ -1,0 +1,15 @@
+---
+# Shared by Linux and Windows
+
+# Domain
+netbios_name: KRUSTY
+domain_name: "KRUSTY.KRAB"
+search_domain: krusty.krab  # DNS search suffix set on Linux hosts
+dc_ip: 10.111.2.1
+
+# Accounts and passwords
+default_user: mrkrabs            # Blue team admin, used as the account for services
+default_password: "Patty321!"    # Default blue team password
+blue_team_admins_password: "{{ default_password }}"  # Blue team admins (sudo on Linux, Domain Admins on Windows)
+grey_team_password: "Pizza4Breakfast!"               # Grey team (kingneptune, paintythepirate) on every host
+grey_team_users_password: "{{ grey_team_password }}" # Name used by the Windows roles

@@ -1,0 +1,8 @@
+collections:
+  - name: ansible.windows
+  - name: community.windows
+  - name: microsoft.ad
+  - name: microsoft.iis
+  - name: community.general
+  - name: community.postgresql
+  - name: community.docker

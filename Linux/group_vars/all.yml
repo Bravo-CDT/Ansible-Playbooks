@@ -1,4 +1,0 @@
----
-default_user: mrkrabs            # Blue team admin, used as the account for services
-default_password: "Patty321!"    # Default blue team password
-search_domain: krusty.krab  # DNS search suffix set on all Linux hosts
