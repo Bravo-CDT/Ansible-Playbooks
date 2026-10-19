@@ -121,10 +121,24 @@
   vars:
     <<: *shared_vars
     ansible_user: "{{ netbios_name }}\\Administrator"
-    java_url: "https://api.adoptium.net/v3/installer/latest/17/ga/windows/x64/jre/hotspot/normal/eclipse?project=jdk" # URL used to download and install Java
-    # URL used to download and install the Openfire Windows installer
-    openfire_url: "https://download.igniterealtime.org/openfire/openfire_5_1_2_x64.exe"
+    java_url: https://api.adoptium.net/v3/installer/latest/17/ga/windows/x64/jre/hotspot/normal/eclipse?project=jdk
+    openfire_url: https://download.igniterealtime.org/openfire/openfire_5_1_2_x64.exe
+    openfire_checksum: 5e52d57fb9e20235ed31a6809c3ecd139fb6583c0b24575cab3459ad4ff0b0a1
     openfire_path: 'C:\Program Files\Openfire'
+    openfire_config_path: '{{ openfire_path }}\conf\openfire.xml'
+    # XMPP addresses use krusty.krab; bubblechat.krusty.krab is the server's DNS name.
+    openfire_xmpp_domain: krusty.krab
+    openfire_hostname: bubblechat.krusty.krab
+    openfire_host_ip: 10.111.2.4
+    # StartTLS on LDAP port 389 protects credentials before the simple bind.
+    openfire_ldap_host: treedome.krusty.krab
+    openfire_ldap_port: 389
+    openfire_ldap_base_dn: DC=krusty,DC=krab
+    # Blue Team Domain Admin selected as the LDAP bind identity for this install.
+    openfire_ldap_bind_dn: CN=sandy,CN=Users,DC=KRUSTY,DC=KRAB
+    openfire_ldap_bind_password: "{{ blue_team_admins_password }}"
+    # Direct members of this AD group become Openfire administrators.
+    openfire_admin_group: Domain Admins
   roles:
     - openfire-set-up
   tags:
