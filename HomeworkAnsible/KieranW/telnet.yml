@@ -1,0 +1,40 @@
+# Basically deploys inetd instead of a standalone telnet server, and it opens the port for it
+# Also makes sure that the port is open and waiting for connections on the client PC. Just in case if something doesn't come up this can help Eliminate problems 
+# Kieran Wittstruck 9/9/26
+---
+- name: Deploy telnet 
+  hosts: all
+  become: yes
+
+  tasks:
+    - name: Install telnet client and server
+      ansible.builtin.apt:
+        name:
+          - telnet
+          - inetutils-telnetd
+          - net-tools 
+          - ufw 
+        state: present
+        update_cache: yes
+
+    - name: Enable telnet entry 
+      ansible.builtin.lineinfile:
+        path: /etc/inetd.conf
+        regexp: '^(#<off>#\s*)?telnet\s'
+        line: 'telnet stream tcp nowait root /usr/sbin/telnetd telnetd'
+        state: present
+
+    - name: Enable and restart inetd
+      ansible.builtin.systemd:
+        name: inetutils-inetd
+        enabled: yes
+        state: restarted
+
+    - name: Allow telnet
+      ansible.builtin.command: ufw allow 23/tcp
+      changed_when: false
+
+    - name: Confirm telnet started
+      ansible.builtin.wait_for:
+        port: 23
+        timeout: 10
