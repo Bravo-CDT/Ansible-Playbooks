@@ -25,7 +25,6 @@
   gather_facts: false
   vars: 
     safe_mode_password: "Coffee@Midnight8" # Password to restore AD
-    blue_team_users_password: "{{ default_password }}" # Password for blue team domain users
     cursor_path: "{{ playbook_dir }}/Theme-assets/cursor.cur"
     ansible_user: Administrator
     # Hosts to add to dns records on AD DC

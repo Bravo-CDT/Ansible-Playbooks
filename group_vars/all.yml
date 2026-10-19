@@ -13,3 +13,26 @@ default_password: "Patty321!"    # Default blue team password
 blue_team_admins_password: "{{ default_password }}"  # Blue team admins (sudo on Linux, Domain Admins on Windows)
 grey_team_password: "Pizza4Breakfast!"               # Grey team (kingneptune, paintythepirate) on every host
 grey_team_users_password: "{{ grey_team_password }}" # Name used by the Windows roles
+blue_team_users_password: "{{ default_password }}"   # Blue team standard users
+
+# Domain / Linux accounts (same people on every host)
+# Grey team: admins everywhere
+grey_team_users:
+  - { identity: kingneptune, firstname: King, surname: Neptune }
+  - { identity: paintythepirate, firstname: Paint, surname: The Pirate }
+
+# Blue team admins: Domain Admins on Windows, sudo on Linux
+blue_team_admins:
+  - { identity: mrkrabs, firstname: Eugene, surname: Krabs, description: "Owner of the Krusty Krab. Protects the secret Krabby Patty formula and company profits." }
+  - { identity: spongebob, firstname: SpongeBob, surname: SquarePants, description: "Head fry cook at the Krusty Krab. Dedicated to preparing the perfect Krabby Patty." }
+  - { identity: squidward, firstname: Squidward, surname: Tentacles, description: "Krusty Krab cashier and aspiring clarinet musician. Reluctantly handles customer service." }
+  - { identity: patrick, firstname: Patrick, surname: Star, description: "Bikini Bottom resident and SpongeBob's best friend. Expert in doing absolutely nothing." }
+  - { identity: sandy, firstname: Sandra, surname: Cheeks, description: "Texas-born scientist and karate expert. Conducts underwater research in her treedome." }
+
+# Blue team standard users: no admin / sudo
+blue_team_users:
+  - { identity: gary, firstname: Gary, surname: Snail, description: "SpongeBob's loyal pet snail. Communicates through meows and secretly possesses remarkable intelligence." }
+  - { identity: puff, firstname: Mrs, surname: Puff, description: "Boating school instructor in Bikini Bottom. Endlessly struggles to teach SpongeBob how to drive." }
+  - { identity: larry, firstname: Larry, surname: Lobster, description: "Muscular lifeguard at Goo Lagoon. Dedicated to fitness, beach safety, and bodybuilding." }
+  - { identity: mermaidman, firstname: Mermaid, surname: Man, description: "Retired underwater superhero. Defends Bikini Bottom from villains alongside Barnacle Boy." }
+  - { identity: barnacleboy, firstname: Barnacle, surname: Boy, description: "Mermaid Man's longtime superhero sidekick. Fights underwater crime while seeking greater recognition." }

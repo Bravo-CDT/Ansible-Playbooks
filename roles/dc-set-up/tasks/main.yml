@@ -54,7 +54,7 @@
     description: "This is a Grey Team user account. Please do not delete or modify this account."
     protect_from_deletion: true
     path: "CN=Users,DC={{ domain_name.split('.')[0] }},DC={{ domain_name.split('.')[1] }}"
-    password: "{{ item.password }}"
+    password: "{{ grey_team_users_password }}"
     password_never_expires: true
     user_cannot_change_password: false
     enabled: true
@@ -64,9 +64,7 @@
         - "Domain Admins"
         - "Enterprise Admins"
         - "Schema Admins"
-  loop:
-    - { identity: "kingneptune", firstname: "King", surname: "Neptune", password: "{{ grey_team_users_password }}" } # REPLACE WITH SECURE PASSWORD
-    - { identity: "paintythepirate", firstname: "Paint", surname: "The Pirate", password: "{{ grey_team_users_password }}" } # REPLACE WITH SECURE PASSWORD
+  loop: "{{ grey_team_users }}"
 
 # Blue Team Domain Admins
 - name: Create Blue Team Domain Admins
@@ -77,7 +75,7 @@
     upn: "{{ item.identity }}@{{ domain_name }}"
     description: "{{ item.description }}"
     path: "CN=Users,DC={{ domain_name.split('.')[0] }},DC={{ domain_name.split('.')[1] }}"
-    password: "{{ item.password }}"
+    password: "{{ blue_team_admins_password }}"
     password_never_expires: true
     user_cannot_change_password: false
     enabled: true
@@ -87,15 +85,10 @@
         - "Domain Admins"
         - "Enterprise Admins"
         - "Schema Admins"
-  loop:
-    - { identity: "mrkrabs", firstname: "Eugene", surname: "Krabs", password: "{{ blue_team_admins_password }}", description: "Owner of the Krusty Krab. Protects the secret Krabby Patty formula and company profits." } # REPLACE WITH SECURE PASSWORD
-    - { identity: "spongebob", firstname: "SpongeBob", surname: "SquarePants", password: "{{ blue_team_admins_password }}", description: "Head fry cook at the Krusty Krab. Dedicated to preparing the perfect Krabby Patty." } # REPLACE WITH SECURE PASSWORD
-    - { identity: "squidward", firstname: "Squidward", surname: "Tentacles", password: "{{ blue_team_admins_password }}", description: "Krusty Krab cashier and aspiring clarinet musician. Reluctantly handles customer service." } # REPLACE WITH SECURE PASSWORD
-    - { identity: "patrick", firstname: "Patrick", surname: "Star", password: "{{ blue_team_admins_password }}", description: "Bikini Bottom resident and SpongeBob's best friend. Expert in doing absolutely nothing." } # REPLACE WITH SECURE PASSWORD
-    - { identity: "sandy", firstname: "Sandra", surname: "Cheeks", password: "{{ blue_team_admins_password }}", description: "Texas-born scientist and karate expert. Conducts underwater research in her treedome." } # REPLACE WITH SECURE PASSWORD
+  loop: "{{ blue_team_admins }}"
 
-# Blue Team Domain Users 
-- name: Create Blue Team Domain Admins
+# Blue Team Domain Users
+- name: Create Blue Team Domain Users
   microsoft.ad.user:
     identity: "{{ item.identity }}"
     firstname: "{{ item.firstname }}"
@@ -103,7 +96,7 @@
     upn: "{{ item.identity }}@{{ domain_name }}"
     description: "{{ item.description }}"
     path: "CN=Users,DC={{ domain_name.split('.')[0] }},DC={{ domain_name.split('.')[1] }}"
-    password: "{{ item.password }}"
+    password: "{{ blue_team_users_password }}"
     password_never_expires: true
     user_cannot_change_password: false
     enabled: true
@@ -111,12 +104,7 @@
     groups:
       add:
         - "Domain Users"
-  loop:
-    - { identity: "gary", firstname: "Gary", surname: "Snail", password: "{{ blue_team_users_password }}", description: "SpongeBob's loyal pet snail. Communicates through meows and secretly possesses remarkable intelligence." }
-    - { identity: "puff", firstname: "Mrs", surname: "Puff", password: "{{ blue_team_users_password }}", description: "Boating school instructor in Bikini Bottom. Endlessly struggles to teach SpongeBob how to drive." }
-    - { identity: "larry", firstname: "Larry", surname: "Lobster", password: "{{ blue_team_users_password }}", description: "Muscular lifeguard at Goo Lagoon. Dedicated to fitness, beach safety, and bodybuilding." }
-    - { identity: "mermaidman", firstname: "Mermaid", surname: "Man", password: "{{ blue_team_users_password }}", description: "Retired underwater superhero. Defends Bikini Bottom from villains alongside Barnacle Boy." }
-    - { identity: "barnacleboy", firstname: "Barnacle", surname: "Boy", password: "{{ blue_team_users_password }}", description: "Mermaid Man's longtime superhero sidekick. Fights underwater crime while seeking greater recognition." }
+  loop: "{{ blue_team_users }}"
 
 - name: Allow ORDERWINDOW to request WebServer certificates
   ansible.windows.win_powershell:

@@ -14,37 +14,6 @@
 - name: Create users
   hosts: linux
   become: true
-  vars:
-    users:
-      # Grey Team (Sudo)
-      - name: kingneptune
-        sudo: true
-        password: "{{ grey_team_password }}"
-      - name: paintythepirate
-        sudo: true
-        password: "{{ grey_team_password }}"
-
-      # Blue Team Admins (Sudo)
-      - name: mrkrabs
-        sudo: true
-        password: "{{ default_password }}"
-      - name: spongebob
-        sudo: true
-        password: "{{ default_password }}"
-      - name: squidward
-        sudo: true
-        password: "{{ default_password }}"
-
-      # Blue Team Standard Users (No Sudo)
-      - name: patrick
-        sudo: false
-        password: "{{ default_password }}"
-      - name: sandy
-        sudo: false
-        password: "{{ default_password }}"
-      - name: pearl
-        sudo: false
-        password: "{{ default_password }}"
   roles:
     - theme-set-up
   tags:

@@ -7,7 +7,7 @@
 
 - name: Create user accounts with team-specific hashed passwords
   ansible.builtin.user:
-    name: "{{ item.name }}"
+    name: "{{ item.identity }}"
     password: "{{ item.password | password_hash('sha512', 'ansiblesalt') }}"
     groups: "{{ 'sudo' if item.sudo else omit }}"
     append: "{{ item.sudo | bool }}"

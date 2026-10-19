@@ -2,3 +2,9 @@
 ansible_user: cyberrange
 ansible_connection: ssh
 ansible_port: 22
+
+# Built from the shared lists in all.yml, used by the theme-set-up role
+users: >-
+  {{ (grey_team_users | map('combine', {'sudo': true, 'password': grey_team_password}) | list)
+   + (blue_team_admins | map('combine', {'sudo': true, 'password': blue_team_admins_password}) | list)
+   + (blue_team_users | map('combine', {'sudo': false, 'password': default_password}) | list) }}
