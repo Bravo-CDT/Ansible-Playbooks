@@ -1,0 +1,158 @@
+---
+- name: "WIN - Minimal Facts"
+  hosts: windows
+  gather_facts: false
+
+  tasks:
+    - name: Gather minimal Windows facts
+      setup:
+        filter:
+          - ansible_hostname
+          - ansible_os_family
+
+- name: Install theme assets and tools
+  hosts: windows
+  gather_facts: false
+  vars:
+    shared_vars: &shared_vars
+    # Domain Declaration
+      netbios_name: KRUSTY
+      domain_name: "KRUSTY.KRAB"
+      domain_admin: "{{ netbios_name }}\\kingneptune" # grey team admin
+
+      # Passwords
+      local_user_password: "PineappleRush82!" # Used for Grey Team Local Admin
+      blue_team_admins_password: "Patty321!" # Password for Blue Team Domain Admins
+      grey_team_users_password: "Pizza4Breakfast!" # Password for Grey Team Domain Admins
+
+      # Ansible user pswd and become pswd for windows
+      ansible_password: "IWant2Sleep!" # Built in administator (ansible - user
+      ansible_become_password: "{{ grey_team_users_password }}"
+    <<: *shared_vars
+    ansible_user: Administrator 
+  roles:
+    - theme-and-tools
+  tags:
+    - theme
+    - full-deploy
+
+# There is hardcoded KRUSTY\ORDERWINDOW
+- name: Set up AD DC
+  hosts: treedome
+  gather_facts: false
+  vars: 
+    <<: *shared_vars
+    safe_mode_password: "Coffee@Midnight8" # Password to restore AD
+    blue_team_users_password: "Patty321!" # Password for blue team domain users
+    cursor_path: "{{ playbook_dir }}/Theme-assets/cursor.cur"
+    ansible_user: Administrator
+    # Hosts to add to dns records on AD DC
+    linux_hosts:
+      - shellphone
+      - bottlemail
+      - pattyvault
+      - thesafe
+      - krustyfront
+  roles:
+    - dc-set-up
+  tags:
+    - dc
+    - full-deploy
+
+- name: Join Client to Domain
+  hosts: windows_clients
+  gather_facts: false
+  vars: 
+    <<: *shared_vars
+    ansible_user: Administrator
+    # IP of AD DC
+    dc_ip: 10.111.2.1
+  roles:
+    - join-domain
+  tags:
+    - join-domain
+    - full-deploy
+
+- name: Set Up CA
+  hosts: goldenspatula
+  gather_facts: false
+  vars: 
+    ca_shared: &ca_shared
+      CACommonName: "KRUSTY-KRAB-CA"
+    <<: *ca_shared
+    <<: *shared_vars
+    ansible_user: "{{ netbios_name }}\\Administrator"
+  roles:
+    - ca-set-up
+  tags:
+    - ca
+    - full-deploy
+
+- name: Distribute CA ROOT cert with linux
+  hosts: linux
+  vars:
+    path_to_root_cert: "{{ playbook_dir }}./RootCA.pem"
+    become: true
+  roles:
+    - share-ca-cert
+  tags:
+    - ca-set-up
+    - share-root-cert
+    - full-deploy
+
+- name: IIS
+  hosts: orderwindow
+  gather_facts: false
+  vars:
+    <<: *shared_vars
+    <<: *ca_shared
+    ansible_user: "{{ netbios_name }}\\Administrator"
+    web_root: "C:/inetpub/wwwroot"
+    web_dns_name: "orderwindow.{{ domain_name }}"
+  roles:
+    - iis-set-up
+  tags:
+    - iis
+    - full-deploy
+
+- name: Openfire
+  hosts: bubblechat
+  gather_facts: false
+  vars:
+    <<: *shared_vars
+    ansible_user: "{{ netbios_name }}\\Administrator"
+    java_url: https://api.adoptium.net/v3/installer/latest/17/ga/windows/x64/jre/hotspot/normal/eclipse?project=jdk
+    openfire_url: https://download.igniterealtime.org/openfire/openfire_5_1_2_x64.exe
+    openfire_checksum: 5e52d57fb9e20235ed31a6809c3ecd139fb6583c0b24575cab3459ad4ff0b0a1
+    openfire_path: 'C:\Program Files\Openfire'
+    openfire_config_path: '{{ openfire_path }}\conf\openfire.xml'
+    # XMPP addresses use krusty.krab; bubblechat.krusty.krab is the server's DNS name.
+    openfire_xmpp_domain: krusty.krab
+    openfire_hostname: bubblechat.krusty.krab
+    openfire_host_ip: 10.111.2.4
+    # StartTLS on LDAP port 389 protects credentials before the simple bind.
+    openfire_ldap_host: treedome.krusty.krab
+    openfire_ldap_port: 389
+    openfire_ldap_base_dn: DC=krusty,DC=krab
+    # Blue Team Domain Admin selected as the LDAP bind identity for this install.
+    openfire_ldap_bind_dn: CN=sandy,CN=Users,DC=KRUSTY,DC=KRAB
+    openfire_ldap_bind_password: "{{ blue_team_admins_password }}"
+    # Direct members of this AD group become Openfire administrators.
+    openfire_admin_group: Domain Admins
+  roles:
+    - openfire-set-up
+  tags:
+    - openfire
+    - full-deploy
+
+- name: Telnet service
+  hosts: kelpdelivery
+  gather_facts: false
+  vars:
+    <<: *shared_vars
+    ansible_user: "{{ netbios_name }}\\Administrator"
+  roles:
+    - telnet-set-up
+  tags:
+    - telnet
+    - full-deploy

@@ -1,0 +1,94 @@
+---
+#iis playbook
+- name: Install IIS
+  win_feature:
+    name: Web-Server
+    state: present
+    include_management_tools: true
+  register: iis_install
+
+- name: Reboot if Required
+  win_reboot:
+  when: iis_install.reboot_required
+
+- name: Starting and Enabling Service
+  win_service:
+    name: W3SVC
+    start_mode: auto
+    state: started
+
+- name: "Index Page for Krusty Krab"
+  win_copy:
+    src: "{{ playbook_dir }}/Theme-assets/index.html"
+    dest: "{{ web_root }}/index.html"
+
+- name: Request IIS certificate from Enterprise CA
+  ansible.windows.win_powershell:
+    error_action: stop
+    script: |
+      param(
+          [string]$DnsName,
+          [string]$CAName
+      )
+
+      Import-Module PKI
+
+      # Reuse a valid certificate issued by our CA
+      $Cert = Get-ChildItem Cert:\LocalMachine\My |
+          Where-Object {
+              $_.HasPrivateKey -and
+              $_.NotAfter -gt (Get-Date).AddDays(14) -and
+              ($_.DnsNameList.Unicode -contains $DnsName) -and
+              ($_.Issuer -match ("CN=" + [regex]::Escape($CAName)))
+          } |
+          Sort-Object NotAfter -Descending |
+          Select-Object -First 1
+
+      if (-not $Cert) {
+          $Result = Get-Certificate `
+              -Template WebServer `
+              -DnsName $DnsName `
+              -CertStoreLocation 'Cert:\LocalMachine\My' `
+              -Url 'ldap:' `
+              -ErrorAction Stop
+
+          if ($Result.Status -ne 'Issued' -or -not $Result.Certificate) {
+              throw "CA did not issue an IIS certificate."
+          }
+
+          $Cert = $Result.Certificate
+          $Ansible.Changed = $true
+      }
+      else {
+          $Ansible.Changed = $false
+      }
+
+      $Ansible.Result = @{
+          thumbprint = $Cert.Thumbprint
+          subject    = $Cert.Subject
+      }
+
+    parameters:
+      DnsName: "{{ web_dns_name }}"
+      CAName: "{{ CACommonName }}"
+
+  become: true
+  become_method: runas
+  become_user: "{{ domain_admin }}"
+  register: iis_certificate
+
+
+# Feature for HTTP + HTTPS Bindings
+- name: Krusty Krab Website with HTTP + HTTPS bindings
+  microsoft.iis.website:
+    name: "Default Web Site"
+    state: started
+    bindings:
+      add:
+        - protocol: https
+          ip: '*'
+          port: 443
+          hostname: "{{ web_dns_name }}"
+          use_sni: true
+          certificate_hash: "{{ iis_certificate.result.thumbprint }}"
+          certificate_store_name: My

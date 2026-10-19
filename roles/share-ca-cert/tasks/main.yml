@@ -1,0 +1,13 @@
+# Distribute the exported root CA certificate to both Windows and Linux client machines
+- name: Copy Root CA certificate to Linux machines
+  ansible.builtin.copy:
+    src: "{{ path_to_root_cert }}"
+    dest: "/usr/local/share/ca-certificates/RootCA.crt"
+    owner: root
+    group: root
+    mode: '0644'
+  register: ca_cert
+
+- name: Import Root CA certificate into Trusted Root Certification Authorities
+  ansible.builtin.command: update-ca-certificates
+  when: ca_cert.changed

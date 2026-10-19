@@ -1,0 +1,16 @@
+# Join all windows boxes to a domain
+---
+- name: Change DNS settings
+  ansible.windows.win_dns_client:
+    adapter_names: '*'
+    dns_servers:
+      - "{{ dc_ip }}"
+
+# Join Domain
+- name: Join Windows Machines to Domain
+  microsoft.ad.membership:
+    dns_domain_name: "{{ domain_name }}"
+    domain_admin_user: "{{ domain_admin }}@{{ domain_name }}"
+    domain_admin_password: "{{ grey_team_users_password }}"
+    state: domain
+    reboot: true

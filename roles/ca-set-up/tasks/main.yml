@@ -1,0 +1,105 @@
+---
+# CA Set up
+- name: Install the ADCS-Cert-Authority feature and RSAT tools
+  ansible.windows.win_feature:
+    name: ADCS-Cert-Authority
+    include_management_tools: true
+    state: present
+
+# Making sure that the CA service is not already configured before attempting to configure it
+- name: Check if CA service is already configured
+  ansible.windows.win_service:
+    name: CertSvc
+  register: ca_service
+
+# Configures AD CS Root CA
+- name: Configure Enterprise Root CA
+  ansible.windows.win_shell: |
+    $ErrorActionPreference = 'Stop'
+    Import-Module ADCSDeployment
+
+    Install-AdcsCertificationAuthority `
+      -CAType EnterpriseRootCA `
+      -CACommonName "{{ CACommonName }}" `
+      -CryptoProviderName "RSA#Microsoft Software Key Storage Provider" `
+      -KeyLength 4096 `
+      -HashAlgorithmName SHA256 `
+      -OverwriteExistingKey `
+      -Force
+  become: true
+  become_method: runas
+  become_user: "{{ domain_admin }}"
+  when: not ca_service.exists
+
+- name: Ensure CA service is running
+  ansible.windows.win_service:
+    name: CertSvc
+    start_mode: auto
+    state: started
+
+- name: Publish Web Server certificate template
+  ansible.windows.win_powershell:
+    error_action: stop
+    script: |
+      Import-Module ADCSAdministration
+
+      $Template = Get-CATemplate |
+          Where-Object { $_.Name -eq 'WebServer' }
+
+      if (-not $Template) {
+          Add-CATemplate -Name 'WebServer'
+          $Ansible.Changed = $true
+      }
+      else {
+          $Ansible.Changed = $false
+      }
+  become: true
+  become_method: runas
+  become_user: "{{ domain_admin }}"
+
+  # Find the newest CA certificate for export
+- name: Get the thumbprint of the newest installed CA certificate
+  ansible.windows.win_shell: |
+    (Get-ChildItem -Path Cert:\LocalMachine\Root | Where-Object { $_.Subject -like "*{{ CACommonName }}*" } | Sort-Object NotBefore -Descending | Select-Object -First 1).Thumbprint.Trim()
+  register: ca_thumbprint
+
+# Export the root CA certificate to a temporary location on the Windows Server
+- name: Export root CA certificate
+  ansible.windows.win_powershell:
+    error_action: stop
+    script: |
+      $Thumbprint = "{{ ca_thumbprint.stdout_lines[0] | trim }}"
+
+      $Cert = Get-ChildItem Cert:\LocalMachine\Root |
+        Where-Object { $_.Thumbprint -eq $Thumbprint } |
+        Select-Object -First 1
+
+      if (-not $Cert) {
+          throw "Root CA certificate not found: $Thumbprint"
+      }
+
+      $Path = 'C:\Windows\Temp\RootCA.pem'
+
+      $Base64 = [Convert]::ToBase64String(
+          $Cert.RawData,
+          [Base64FormattingOptions]::InsertLineBreaks
+      )
+
+      $PEM = "-----BEGIN CERTIFICATE-----`r`n$Base64`r`n-----END CERTIFICATE-----`r`n"
+
+      if (-not (Test-Path $Path) -or
+          [IO.File]::ReadAllText($Path) -ne $PEM) {
+
+          [IO.File]::WriteAllText($Path, $PEM)
+          $Ansible.Changed = $true
+      }
+      else {
+          $Ansible.Changed = $false
+      }
+
+# Fetch the exported root CA certificate to the Ansible controller for the further distribution to client machines
+- name: Copy Root CA to Ansible Controller
+  ansible.builtin.fetch:
+    src: C:\Windows\Temp\RootCA.pem 
+    dest: "{{ playbook_dir }}/RootCA.pem" # Location on the Ansible controller where the root CA certificate will be stored, can be changed to any other location
+    flat: true
