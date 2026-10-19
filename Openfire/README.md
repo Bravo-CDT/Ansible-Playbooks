@@ -10,26 +10,28 @@ The playbook enables XMPP clients on TCP 5222 and HTTP chat on TCP 7070 (BOSH at
 
 ## Before running
 
-Install the Windows collections on the Ansible controller:
+On the `scoring` Ansible controller, install the Windows collections and the WinRM Python library in Ansible's pipx environment:
 
 ```sh
 ansible-galaxy collection install ansible.windows community.windows
+pipx inject ansible-core pywinrm
 ```
 
-The inventory must contain a Windows host named `bubblechat` with working Ansible/WinRM access and administrator privileges. This repository does not contain an inventory file. On the Ansible controller, check your existing inventory before deployment (replace `PATH_TO_INVENTORY` with its actual path):
+The playbook supplies Bubblechat's address (`10.111.2.4`), WinRM HTTP port (`5985`), NTLM transport with message encryption, and the `KRUSTY\mrkrabs` connection account. That account must have administrator access on Bubblechat. It reuses the static LDAP bind password in the playbook, so no credential prompt or separate inventory file is needed. This WinRM connection is separate from Openfire's LDAPS connection to the domain controller on port 636. [Ansible notes](https://docs.ansible.com/projects/ansible/latest/os_guide/windows_winrm.html) that NTLM protection over HTTP is weaker than verified TLS; the HTTP choice is for this lab.
+
+From a checkout containing the `Openfire` folder, verify the connection and syntax without running the install tasks. The comma in `bubblechat,` makes it an inline inventory host:
 
 ```sh
-ansible-inventory -i PATH_TO_INVENTORY --host bubblechat
-ansible -i PATH_TO_INVENTORY bubblechat -m ansible.windows.win_ping
-ansible-playbook -i PATH_TO_INVENTORY --syntax-check Openfire/openfire-install.yml
+ansible-playbook -i 'bubblechat,' Openfire/openfire-install.yml --tags connection_check
+ansible-playbook -i 'bubblechat,' Openfire/openfire-install.yml --syntax-check
 ```
 
-The first command must show the `bubblechat` host, the second must return `pong`, and the syntax check must pass. If either connectivity check fails, set up the inventory and WinRM connection before running this playbook. From Bubblechat, `treedome.krusty.krab` must resolve to the DC and TCP 636 must be reachable. Its Windows certificate store must trust the DC's LDAPS certificate chain for the playbook's bind preflight. The DC certificate must identify `treedome.krusty.krab`. The preflight confirms that the bind account works and that the five admin usernames exist below `DC=krusty,DC=krab`.
+The connection check must return `pong`, and the syntax check must pass. The connection check only contacts Bubblechat; it does not install Openfire. From Bubblechat, `treedome.krusty.krab` must resolve to the DC and TCP 636 must be reachable. Its Windows certificate store must trust the DC's LDAPS certificate chain for the playbook's bind preflight. The DC certificate must identify `treedome.krusty.krab`. The preflight confirms that the bind account works and that the five admin usernames exist below `DC=krusty,DC=krab`.
 
-The playbook uses the selected Blue Team Domain Admin account `mrkrabs` (`CN=mrkrabs,CN=Users,DC=KRUSTY,DC=KRAB`) for its LDAP bind. Openfire needs only directory search/read access; Domain Admin privileges are not required for this function. The password is stored in the tracked playbook and deployed Openfire configuration, so access to either exposes this privileged AD credential. No LDAP credential prompt or extra variables are needed. The playbook stops before installing Openfire if the bind or directory search fails. Replace `inventory` with your actual inventory path:
+The playbook uses the selected Blue Team Domain Admin account `mrkrabs` (`CN=mrkrabs,CN=Users,DC=KRUSTY,DC=KRAB`) for its LDAP bind. Openfire needs only directory search/read access; Domain Admin privileges are not required for this function. The password is stored in the tracked playbook and deployed Openfire configuration, so access to either exposes this privileged AD credential. No LDAP credential prompt or extra variables are needed. The playbook stops before installing Openfire if the bind or directory search fails. When ready to deploy, run:
 
 ```sh
-ansible-playbook -i inventory Openfire/openfire-install.yml
+ansible-playbook -i 'bubblechat,' Openfire/openfire-install.yml
 ```
 
 The playbook does not create or change `mrkrabs` in AD. If that account's password changes, update the `openfire_ldap_bind_password` variable in the playbook and the deployed Openfire configuration; a normal rerun does not replace Openfire's completed first-run configuration.

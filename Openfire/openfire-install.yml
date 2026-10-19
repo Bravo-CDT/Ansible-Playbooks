@@ -22,6 +22,15 @@
     # Blue Team Domain Admin selected as the LDAP bind identity for this install.
     openfire_ldap_bind_dn: CN=mrkrabs,CN=Users,DC=KRUSTY,DC=KRAB
     openfire_ldap_bind_password: 'Patty321!'
+    # Connect to Bubblechat by IP over WinRM with NTLM message encryption.
+    ansible_host: 10.111.2.4
+    ansible_connection: winrm
+    ansible_port: 5985
+    ansible_winrm_scheme: http
+    ansible_winrm_transport: ntlm
+    ansible_winrm_message_encryption: always
+    ansible_user: 'KRUSTY\mrkrabs'
+    ansible_password: '{{ openfire_ldap_bind_password }}'
     # Grey Team and the three designated Blue Team AD users can administer Openfire.
     openfire_admin_users:
       - kingneptune
@@ -30,6 +39,10 @@
       - Spongebob
       - Squidward
   tasks:
+    - name: Verify WinRM connection to Bubblechat
+      ansible.windows.win_ping:
+      tags: [connection_check]
+
     # The XMPP domain becomes part of every user's address after first-run setup.
     - name: Validate the XMPP domain
       ansible.builtin.assert:
