@@ -6,7 +6,7 @@ ansible_winrm_server_cert_validation: ignore
 ansible_user: Administrator
 
 # Built in administrator (ansible user)
-ansible_password: "IWant2Sleep!"
+ansible_password: "{{ grey_team_users_password }}"
 ansible_become_password: "{{ grey_team_users_password }}"
 
 domain_admin: "{{ netbios_name }}\\kingneptune" # grey team admin
