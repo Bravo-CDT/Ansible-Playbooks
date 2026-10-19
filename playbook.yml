@@ -88,17 +88,17 @@
     - ca
     - full-deploy
 
-# - name: Distribute CA ROOT cert with linux
-#   hosts: linux
-#   vars:
-#     path_to_root_cert: "{{ playbook_dir }}./RootCA.pem"
-#     become: true
-#   roles:
-#     - share-ca-cert
-#   tags:
-#     - ca-set-up
-#     - share-root-cert
-#     - full-deploy
+- name: Distribute CA ROOT cert with linux
+  hosts: linux
+  vars:
+    path_to_root_cert: "{{ playbook_dir }}./RootCA.pem"
+    become: true
+  roles:
+    - share-ca-cert
+  tags:
+    - ca-set-up
+    - share-root-cert
+    - full-deploy
 
 - name: IIS
   hosts: orderwindow
