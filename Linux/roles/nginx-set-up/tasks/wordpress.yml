@@ -1,0 +1,39 @@
+---
+- name: Create WordPress network
+  community.docker.docker_network:
+    name: wordpress_net
+
+- name: Run WordPress database
+  community.docker.docker_container:
+    name: wordpress-db
+    image: "{{ wordpress_db_image }}"
+    restart_policy: unless-stopped
+    networks:
+      - name: wordpress_net
+    volumes:
+      - wordpress_db:/var/lib/mysql
+    env:
+      MARIADB_ROOT_PASSWORD: "{{ wordpress_db_root_password }}"
+      MARIADB_DATABASE: "{{ wordpress_db_name }}"
+      MARIADB_USER: "{{ wordpress_db_user }}"
+      MARIADB_PASSWORD: "{{ wordpress_db_password }}"
+  no_log: true
+
+# Published on loopback only, so the site is reachable through nginx on port 80
+- name: Run WordPress
+  community.docker.docker_container:
+    name: wordpress
+    image: "{{ wordpress_image }}"
+    restart_policy: unless-stopped
+    networks:
+      - name: wordpress_net
+    published_ports:
+      - "127.0.0.1:{{ wordpress_port }}:80"
+    volumes:
+      - wordpress_html:/var/www/html
+    env:
+      WORDPRESS_DB_HOST: wordpress-db
+      WORDPRESS_DB_NAME: "{{ wordpress_db_name }}"
+      WORDPRESS_DB_USER: "{{ wordpress_db_user }}"
+      WORDPRESS_DB_PASSWORD: "{{ wordpress_db_password }}"
+  no_log: true

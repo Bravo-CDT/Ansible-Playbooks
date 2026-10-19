@@ -1,0 +1,78 @@
+---
+- name: Confirm Password Presence
+  ansible.builtin.fail:
+    msg: "db_password is empty. Set it in the PostgreSQL play vars in playbook.yml."
+  when: db_password | length == 0
+
+- name: Install PostgreSQL repository prerequisites
+  ansible.builtin.apt:
+    name:
+      - postgresql-common
+      - ca-certificates
+    state: present
+    update_cache: true
+    cache_valid_time: 3600
+
+- name: Configure PostgreSQL PGDG repository
+  ansible.builtin.command:
+    cmd: /usr/share/postgresql-common/pgdg/apt.postgresql.org.sh -y
+  args:
+    creates: /etc/apt/sources.list.d/pgdg.sources
+
+- name: Install PostgreSQL and Python adapter
+  ansible.builtin.apt:
+    name:
+      - postgresql
+      - python3-psycopg2
+    state: present
+    update_cache: true
+    cache_valid_time: 3600
+
+- name: Ensure PostgreSQL is enabled and running
+  ansible.builtin.service:
+    name: postgresql
+    state: started
+    enabled: true
+
+- name: Create Database User
+  community.postgresql.postgresql_user:
+    name: "{{ db_user }}"
+    password: "{{ db_password }}"
+    role_attr_flags: "NOSUPERUSER,CREATEDB"
+    state: present
+  become_user: postgres
+  no_log: true
+
+- name: Create Database and Assign Owner
+  community.postgresql.postgresql_db:
+    name: "{{ db_name }}"
+    owner: "{{ db_user }}"
+    state: present
+  become_user: postgres
+
+# Allow remote clients
+- name: Listen on all interfaces
+  community.postgresql.postgresql_alter_system:
+    param: listen_addresses
+    value: "*"
+    login_db: postgres
+  become_user: postgres
+  notify: Restart PostgreSQL
+
+- name: Find pg_hba.conf
+  community.postgresql.postgresql_query:
+    query: SHOW hba_file
+    login_db: postgres
+  register: hba_file
+  changed_when: false
+  become_user: postgres
+
+- name: Allow remote client to connect with password
+  community.postgresql.postgresql_pg_hba:
+    dest: "{{ hba_file.query_result[0].hba_file }}"
+    contype: host
+    users: all
+    databases: all
+    source: "{{ db_allowed_source }}"
+    method: scram-sha-256
+  notify: Reload PostgreSQL

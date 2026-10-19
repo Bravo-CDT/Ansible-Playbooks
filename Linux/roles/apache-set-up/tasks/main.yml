@@ -1,0 +1,24 @@
+---
+# Installs the base Apache package on target machine(s)
+- name: Install Apache
+  ansible.builtin.apt:
+    name: apache2
+    state: present
+    update_cache: true
+    cache_valid_time: 3600
+
+# Enable Apache at boot and make sure it is running
+- name: Ensure Apache is Enabled and Running
+  ansible.builtin.service:
+    name: apache2
+    enabled: true
+    state: started
+
+# Deploy a custom Gray Team webpage to the Apache web directory
+- name: Deploy Custom Webpage
+  ansible.builtin.template:
+    src: index.html.j2
+    dest: /var/www/html/index.html
+    owner: root
+    group: root
+    mode: '0644'

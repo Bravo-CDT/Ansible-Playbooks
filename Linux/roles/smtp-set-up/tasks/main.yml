@@ -1,0 +1,134 @@
+
+---    
+- name: Install SMTP and authentication packages
+  ansible.builtin.apt:
+    name:
+      - postfix
+      - sasl2-bin
+      - libsasl2-modules
+      - openssl
+    state: present
+    update_cache: true
+
+- name: Configure LDAP authentication against AD
+  ansible.builtin.copy:
+    dest: /etc/saslauthd.conf
+    mode: "0600"
+    content: |
+      ldap_servers: ldap://{{ ad_server }}:389
+      ldap_search_base: {{ ad_search_base }}
+      ldap_bind_dn: {{ ad_bind_user }}
+      ldap_password: {{ ad_bind_password }}
+      ldap_filter: (sAMAccountName=%U)
+      ldap_auth_method: bind
+      ldap_version: 3
+      ldap_referrals: no
+      ldap_start_tls: no
+  no_log: true
+
+- name: Enable saslauthd
+  ansible.builtin.lineinfile:
+    path: /etc/default/saslauthd
+    regexp: '^START='
+    line: 'START=yes'
+
+- name: Select LDAP authentication backend
+  ansible.builtin.lineinfile:
+    path: /etc/default/saslauthd
+    regexp: '^MECHANISMS='
+    line: 'MECHANISMS="ldap"'
+
+- name: Configure Cyrus SASL for Postfix
+  ansible.builtin.copy:
+    dest: /etc/postfix/sasl/smtpd.conf
+    content: |
+      pwcheck_method: saslauthd
+      mech_list: PLAIN LOGIN
+    mode: "0644"
+
+- name: Allow Postfix to access SASL
+  ansible.builtin.user:
+    name: postfix
+    groups: sasl
+    append: true
+
+- name: Generate lab SMTP TLS certificate
+  ansible.builtin.command:
+    argv:
+      - openssl
+      - req
+      - -x509
+      - -newkey
+      - rsa:2048
+      - -nodes
+      - -keyout
+      - /etc/ssl/private/bottlemail.key
+      - -out
+      - /etc/ssl/certs/bottlemail.crt
+      - -days
+      - "365"
+      - -subj
+      - "/CN={{ smtp_hostname }}"
+      - -addext
+      - "subjectAltName=DNS:{{ smtp_hostname }}"
+    creates: /etc/ssl/certs/bottlemail.crt
+
+- name: Protect SMTP TLS private key
+  ansible.builtin.file:
+    path: /etc/ssl/private/bottlemail.key
+    owner: root
+    group: root
+    mode: "0600"
+
+- name: Configure Postfix
+  ansible.builtin.command:
+    argv:
+      - postconf
+      - -e
+      - "{{ item }}"
+  loop:
+    - "myhostname={{ smtp_hostname }}"
+    - "cyrus_sasl_config_path=/etc/postfix/sasl"
+    - "smtpd_sasl_type=cyrus"
+    - "smtpd_sasl_auth_enable=no"
+    - "smtpd_sasl_security_options=noanonymous"
+    - "smtpd_tls_cert_file=/etc/ssl/certs/bottlemail.crt"
+    - "smtpd_tls_key_file=/etc/ssl/private/bottlemail.key"
+    - "smtpd_tls_security_level=may"
+    - "smtpd_relay_restrictions=permit_mynetworks,permit_sasl_authenticated,reject_unauth_destination"
+
+- name: Enable SMTP submission port 587
+  ansible.builtin.command:
+    argv:
+      - postconf
+      - -M
+      - "submission/inet=submission inet n - n - - smtpd"
+
+- name: Require authentication and TLS on port 587
+  ansible.builtin.command:
+    argv:
+      - postconf
+      - -P
+      - "{{ item }}"
+  loop:
+    - "submission/inet/syslog_name=postfix/submission"
+    - "submission/inet/smtpd_sasl_auth_enable=yes"
+    - "submission/inet/smtpd_tls_security_level=encrypt"
+    - "submission/inet/smtpd_tls_auth_only=yes"
+    - "submission/inet/smtpd_relay_restrictions=permit_sasl_authenticated,reject"
+
+- name: Start LDAP authentication service
+  ansible.builtin.service:
+    name: saslauthd
+    state: restarted
+    enabled: true
+
+- name: Check Postfix configuration
+  ansible.builtin.command: postfix check
+  changed_when: false
+
+- name: Restart Postfix
+  ansible.builtin.service:
+    name: postfix
+    state: restarted
+    enabled: true

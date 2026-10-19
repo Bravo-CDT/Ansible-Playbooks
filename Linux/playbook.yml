@@ -1,0 +1,121 @@
+---
+- name: Update packages
+  hosts: linux
+  become: true
+  tasks:
+    - name: Upgrade all packages
+      ansible.builtin.apt:
+        upgrade: dist
+        update_cache: true
+  tags:
+    - update
+    - full-deploy
+
+- name: Create users
+  hosts: linux
+  become: true
+  vars:
+    path_to_root_cert: '/home/user/RootCA.pem' # Replace with user on ansible controller
+    dc_ip: 10.111.2.1
+    grey_team_password: "Anything" # Replace with something valid
+    users:
+      # Grey Team (Sudo)
+      - name: kingneptune
+        sudo: true
+        password: "{{ grey_team_password }}"
+      - name: paintythepirate
+        sudo: true
+        password: "{{ grey_team_password }}"
+
+      # Blue Team Admins (Sudo)
+      - name: mrkrabs
+        sudo: true
+        password: "{{ default_password }}"
+      - name: spongebob
+        sudo: true
+        password: "{{ default_password }}"
+      - name: squidward
+        sudo: true
+        password: "{{ default_password }}"
+
+      # Blue Team Standard Users (No Sudo)
+      - name: patrick
+        sudo: false
+        password: "{{ default_password }}"
+      - name: sandy
+        sudo: false
+        password: "{{ default_password }}"
+      - name: pearl
+        sudo: false
+        password: "{{ default_password }}"
+  roles:
+    - theme-set-up
+  tags:
+    - always
+    - theme
+    - full-deploy
+
+- name: Set Up SMB
+  hosts: shellphone
+  become: true
+  vars:
+    smb_username: "{{ default_user }}"
+    smb_password: "{{ default_password }}"
+  roles:
+    - smb-set-up
+  tags:
+    - smb
+    - full-deploy
+
+- name: Set up SMTP
+  hosts: bottlemail
+  become: true
+  vars:
+    ad_server: "treedome.krusty.krab"
+    ad_search_base: "DC=krusty,DC=krab"
+    ad_bind_user: "mrkrabs@krusty.krab"
+    ad_bind_password: "Patty321!"
+    smtp_hostname: "bottlemail.krusty.krab"
+  roles:
+    - smtp-set-up
+  tags:
+    - smtp
+    - full-deploy
+
+# ansible-galaxy collection install community.postgresql
+- name: Set Up PostgreSql
+  hosts: pattyvault
+  become: true
+  vars:
+    db_user: "{{ default_user }}"
+    db_password: "{{ default_password }}"
+    db_name: "KrustySafe" # Replace
+    db_allowed_source: "10.111.0.0/16" # Subnet allowed to connect remotely
+
+  roles:
+    - postgresql-set-up
+  tags:
+    - sql
+    - full-deploy
+
+- name: Set Up Apache
+  hosts: thesafe
+  become: true
+  vars:
+    team_name: "Bravo"
+    comp_name: "CSEC473 Competition"
+    apache_status: "Welcome to the Bravo Apache Web Server!"
+  roles:
+    - apache-set-up
+  tags:
+    - apache
+    - full-deploy
+
+- name: Set Up Nginx
+  hosts: krustyfront
+  become: true
+  roles:
+    - nginx-set-up
+  tags:
+    - nginx
+    - full-deploy

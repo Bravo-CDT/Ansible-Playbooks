@@ -1,0 +1,74 @@
+---
+# Installs the Samba package
+- name: Install Samba and Dependencies
+  ansible.builtin.apt:
+    name:
+      - samba
+      - smbclient
+      - python3-pexpect
+    update_cache: true
+    cache_valid_time: 3600
+    state: present
+
+# Create the Sambashare directory to be the shared folder
+- name: Create Shared Folder
+  ansible.builtin.file:
+    path: "/home/{{ smb_username }}/sambashare"
+    state: directory
+    owner: "{{ smb_username }}"
+    group: "{{ smb_username }}"
+    mode: '0755'
+
+# Edit the Samba configuration file to add the shared folder
+- name: Edit Samba Configuration
+  ansible.builtin.blockinfile:
+    path: /etc/samba/smb.conf
+    block: |
+      [sambashare]
+      path = /home/{{ smb_username }}/sambashare
+      read only = no
+      browsable = yes
+      guest ok = yes
+  notify: Restart Samba
+
+# Apply the config change before checking shares
+- name: Apply Samba Changes
+  ansible.builtin.meta: flush_handlers
+
+# FEATURE 2
+# Only add the Samba user if it isn't already in the Samba database
+- name: Check Existing Samba Users
+  ansible.builtin.command: pdbedit -L
+  register: samba_users
+  changed_when: false
+
+- name: Set Samba Password
+  ansible.builtin.expect:
+    command: smbpasswd -a {{ smb_username }}
+    responses:
+      'New SMB password:': '{{ smb_password }}'
+      'Retype new SMB password:': '{{ smb_password }}'
+  no_log: true
+  when: smb_username not in (samba_users.stdout_lines | map('regex_replace', ':.*$', '') | list)
+
+# Get available Shares
+- name: Get Available Shares
+  ansible.builtin.command: smbclient -L localhost -U {{ smb_username }}%{{ smb_password }}
+  register: samba_shares
+  changed_when: false
+  no_log: true
+
+# Display available shares
+- name: Display Available Shares
+  ansible.builtin.debug:
+    msg: "{{ samba_shares.stdout }}"
+
+# Feature 3
+# Create an example text file with some content
+- name: Create Example File
+  ansible.builtin.copy:
+    content: "Fooled ya Plankton, there's no formula here! Ahgagagagaga"
+    dest: "/home/{{ smb_username }}/sambashare/secretformula.txt"
+    owner: "{{ smb_username }}"
+    group: "{{ smb_username }}"
+    mode: '0644'
