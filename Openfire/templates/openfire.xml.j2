@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<jive>
+  <adminConsole>
+    <port>9090</port>
+    <securePort>-1</securePort>
+  </adminConsole>
+
+  <connectionProvider>
+    <className>org.jivesoftware.database.EmbeddedConnectionProvider</className>
+  </connectionProvider>
+
+  <ldap>
+    <host>{{ openfire_ldap_host | e }}</host>
+    <port>{{ openfire_ldap_port }}</port>
+    <baseDN>{{ openfire_ldap_base_dn | e }}</baseDN>
+    <adminDN>{{ openfire_ldap_bind_dn | e }}</adminDN>
+    <adminPassword>{{ openfire_ldap_bind_password | e }}</adminPassword>
+    <usernameField>sAMAccountName</usernameField>
+    <nameField>displayName</nameField>
+    <sslEnabled>false</sslEnabled>
+    <startTlsEnabled>true</startTlsEnabled>
+  </ldap>
+
+  <provider>
+    <user>
+      <className>org.jivesoftware.openfire.ldap.LdapUserProvider</className>
+    </user>
+    <auth>
+      <className>org.jivesoftware.openfire.ldap.LdapAuthProvider</className>
+    </auth>
+  </provider>
+
+  <admin>
+    <authorizedUsernames>{{ openfire_admin_users | join(',') | e }}</authorizedUsernames>
+  </admin>
+
+  <register>
+    <inband>false</inband>
+  </register>
+
+  <httpbind>
+    <enabled>true</enabled>
+    <port>
+      <plain>7070</plain>
+    </port>
+  </httpbind>
+
+  <autosetup>
+    <run>true</run>
+    <locale>en</locale>
+    <xmpp>
+      <domain>{{ openfire_xmpp_domain | e }}</domain>
+      <fqdn>{{ openfire_hostname | e }}</fqdn>
+      <auth>
+        <anonymous>false</anonymous>
+      </auth>
+    </xmpp>
+    <database>
+      <mode>embedded</mode>
+    </database>
+    <authprovider>
+      <mode>ldap</mode>
+    </authprovider>
+  </autosetup>
+</jive>
