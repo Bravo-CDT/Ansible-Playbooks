@@ -4,6 +4,18 @@
   ansible.windows.win_feature:
     name:
       - AD-Domain-Services
+    state: present
+    include_management_tools: yes
+  register: adds_insatall
+
+- name: Reboot if AD DS installation requires it
+  ansible.windows.win_reboot:
+    reboot_timeout: 900
+  when: adds_install.reboot_required
+
+- name: Install ADDS feature
+  ansible.windows.win_feature:
+    name:
       - RSAT-AD-Tools
       - RSAT-ADDS
     state: present
