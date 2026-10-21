@@ -8,10 +8,13 @@
       - RSAT-ADDS
     state: present
     include_management_tools: yes
+  register: adds_install
 
 - name: Reboot if AD DS installation requires it
   ansible.windows.win_reboot:
     reboot_timeout: 900
+    post_reboot_delay: 60
+  when: adds_install.reboot_required | default(false)
 
 - name: Create a new AD forest
   microsoft.ad.domain:
