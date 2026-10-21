@@ -109,24 +109,7 @@
       add:
         - "Domain Users"
   loop: "{{ blue_team_users }}"
-
-- name: Allow ORDERWINDOW to request WebServer certificates
-  ansible.windows.win_powershell:
-    error_action: stop
-    script: |
-      $ConfigDN = ([ADSI]"LDAP://RootDSE").configurationNamingContext
-      $Template = "CN=WebServer,CN=Certificate Templates,CN=Public Key Services,CN=Services,$ConfigDN"
-
-      & dsacls.exe $Template /G 'KRUSTY\ORDERWINDOW$:GR'
-      if ($LASTEXITCODE -ne 0) { throw "Failed to grant Read" }
-
-      & dsacls.exe $Template /G 'KRUSTY\ORDERWINDOW$:CA;Enroll'
-      if ($LASTEXITCODE -ne 0) { throw "Failed to grant Enroll" }
-
-  become: true
-  become_method: runas
-  become_user: "{{ domain_admin }}"
-
+  
 # Set up DNS Records for Linux Enviorment
 - name: Create DNS A records for Linux machines
   ansible.windows.win_dns_record:
