@@ -22,6 +22,23 @@
     src: "{{ playbook_dir }}/Theme-assets/index.html"
     dest: "{{ web_root }}/index.html"
 
+- name: Allow ORDERWINDOW to request WebServer certificates
+  ansible.windows.win_powershell:
+    error_action: stop
+    script: |
+      $ConfigDN = ([ADSI]"LDAP://RootDSE").configurationNamingContext
+      $Template = "CN=WebServer,CN=Certificate Templates,CN=Public Key Services,CN=Services,$ConfigDN"
+
+      & dsacls.exe $Template /G 'KRUSTY\ORDERWINDOW$:GR'
+      if ($LASTEXITCODE -ne 0) { throw "Failed to grant Read" }
+
+      & dsacls.exe $Template /G 'KRUSTY\ORDERWINDOW$:CA;Enroll'
+      if ($LASTEXITCODE -ne 0) { throw "Failed to grant Enroll" }
+  delegate_to: "{{ groups['treedome'][0] }}"
+  become: true
+  become_method: runas
+  become_user: "{{ domain_admin }}"
+
 - name: Request IIS certificate from Enterprise CA
   ansible.windows.win_powershell:
     error_action: stop
