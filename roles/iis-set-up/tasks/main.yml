@@ -2,7 +2,7 @@
 - name: gpupdate
   ansible.windows.win_shell: |
     gpupdate /Force
-    certuutil -pulse
+    certutil -pulse
 
 #iis playbook
 - name: Install IIS
