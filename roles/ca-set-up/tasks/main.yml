@@ -6,13 +6,20 @@
     include_management_tools: true
     state: present
 
-# Making sure that the CA service is not already configured before attempting to configure it
-- name: Check if CA service is already configured
-  ansible.windows.win_service:
-    name: CertSvc
-  register: ca_service
+# Check actual CA configuration, not just service existence
+- name: Check if CA is already configured
+  ansible.windows.win_powershell:
+    script: |
+      $Path = 'HKLM:\SYSTEM\CurrentControlSet\Services\CertSvc\Configuration'
+      $ActiveCA = (Get-ItemProperty -Path $Path -Name Active -ErrorAction SilentlyContinue).Active
 
-# Configures AD CS Root CA
+      $Ansible.Result = [bool](
+          $ActiveCA -and
+          (Test-Path (Join-Path $Path $ActiveCA))
+      )
+      $Ansible.Changed = $false
+  register: ca_config
+
 - name: Configure Enterprise Root CA
   ansible.windows.win_shell: |
     $ErrorActionPreference = 'Stop'
@@ -24,12 +31,11 @@
       -CryptoProviderName "RSA#Microsoft Software Key Storage Provider" `
       -KeyLength 4096 `
       -HashAlgorithmName SHA256 `
-      -OverwriteExistingKey `
       -Force
   become: true
   become_method: runas
   become_user: "{{ domain_admin }}"
-  when: not ca_service.config
+  when: not ca_config.result
 
 - name: Ensure CA service is running
   ansible.windows.win_service:
