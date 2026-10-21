@@ -31,7 +31,7 @@
 
 - name: Wait for the server to come back online
   ansible.windows.win_wait_for:
-    port: 5986
+    port: 5985
     delay: 10
     timeout: 300
 
