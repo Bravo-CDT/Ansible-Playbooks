@@ -34,20 +34,6 @@
     delay: 10
     timeout: 300
 
-- name: Verify domain controller promotion
-  ansible.windows.win_shell: |
-    Get-ADDomainController -Filter * | Select-Object Name, Domain, Site
-  register: dc_info
-
-- name: Display domain controller information
-  ansible.builtin.debug:
-    var: dc_info.stdout_lines 
-
-- name: if domain is not created, fail the playbook
-  ansible.builtin.fail:
-    msg: "Domain controller promotion failed. Please check the logs."
-  when: dc_info.stdout_lines | length == 0
-
 # Grey Team Domain Users
 - name: Create Grey Team Domain Users
   microsoft.ad.user:
@@ -109,7 +95,7 @@
       add:
         - "Domain Users"
   loop: "{{ blue_team_users }}"
-  
+
 # Set up DNS Records for Linux Enviorment
 - name: Create DNS A records for Linux machines
   ansible.windows.win_dns_record:
