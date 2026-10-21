@@ -46,6 +46,11 @@
     line: 'telnet stream tcp nowait root /usr/sbin/telnetd telnetd'
     state: present
 
+- name: Restart inetd
+  ansioble.windows.win_service:
+    name: inetd 
+    state: restarted
+
 - name: Allow Telnet through Windows Firewall
   ansible.windows.win_powershell:
     script: |
