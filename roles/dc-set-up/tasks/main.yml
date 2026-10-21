@@ -76,8 +76,6 @@
     groups:
       add:
         - "Domain Admins"
-        - "Enterprise Admins"
-        - "Schema Admins"
   loop: "{{ blue_team_admins }}"
 
 # Blue Team Domain Users
