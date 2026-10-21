@@ -47,7 +47,7 @@
     state: present
 
 - name: Restart inetd
-  ansioble.windows.win_service:
+  ansible.windows.win_service:
     name: inetd 
     state: restarted
 
