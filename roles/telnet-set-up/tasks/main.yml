@@ -45,7 +45,6 @@
     regexp: '^\s*#?\s*telnet\s+stream\s+tcp\s+'
     line: 'telnet stream tcp nowait root /usr/sbin/telnetd telnetd'
     state: present
-  notify: Restart inetd
 
 - name: Allow Telnet through Windows Firewall
   ansible.windows.win_powershell:
