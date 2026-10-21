@@ -8,7 +8,6 @@
       - RSAT-ADDS
     state: present
     include_management_tools: yes
-  register: adds_insatall
 
 - name: Reboot if AD DS installation requires it
   ansible.windows.win_reboot:
