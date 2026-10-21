@@ -29,7 +29,7 @@
   become: true
   become_method: runas
   become_user: "{{ domain_admin }}"
-  when: not ca_service.exists
+  when: not ca_service.config
 
 - name: Ensure CA service is running
   ansible.windows.win_service:
